@@ -7,6 +7,21 @@ import { initWatcher } from './watcher'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
 
+// Register privileged scheme BEFORE app.whenReady
+const { protocol } = require('electron')
+protocol.registerSchemesAsPrivileged([
+  {
+    scheme: 'media',
+    privileges: {
+      secure: true,
+      supportFetchAPI: true,
+      bypassCSP: true,
+      corsEnabled: true,
+      stream: true
+    }
+  }
+])
+
 interface StoreSchema {
   libraryPath: string;
 }
@@ -69,6 +84,43 @@ app.whenReady().then(async () => {
   store = new Store<StoreSchema>({
     defaults: {
       libraryPath: path.join(process.cwd(), 'library')
+    }
+  });
+
+  // Protocol handler for media files
+  const { protocol, net } = require('electron');
+  protocol.handle('media', (request) => {
+    const url = request.url.replace('media://', '');
+    const decodedUrl = decodeURIComponent(url);
+    
+    try {
+      let filePath = decodedUrl;
+      
+      // If path starts with slash but looks like a Windows path (e.g. /C:/...), remove the slash
+      if (process.platform === 'win32') {
+         if (filePath.startsWith('/') && /[a-zA-Z]:/.test(filePath.slice(1, 3))) {
+           filePath = filePath.slice(1);
+         }
+         // Fallback: if we somehow got "C/Users" (missing colon), try to fix it? 
+         // But the fix in MediaGrid should prevent this. 
+         // Let's just trust that the MediaGrid fix ensures we get /C:/...
+      }
+      
+      const fileUrl = path.join(filePath);
+      // Ensure file protocol has 3 slashes for Windows absolute paths
+      const finalUrl = 'file:///' + fileUrl.replace(/\\/g, '/');
+      
+      console.log('Media Request:', {
+        original: request.url,
+        decoded: decodedUrl,
+        finalPath: filePath,
+        fetchUrl: finalUrl
+      });
+      
+      return net.fetch(finalUrl);
+    } catch (e) {
+      console.error('Media protocol error:', e);
+      return new Response('Error loading file', { status: 404 });
     }
   });
 

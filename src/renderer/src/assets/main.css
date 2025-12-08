@@ -315,3 +315,50 @@ body {
   background-color: var(--primary-color);
   color: white;
 }
+
+/* Dashboard */
+.dashboard-content {
+  display: flex;
+  padding: 40px;
+  gap: 30px;
+  flex-wrap: wrap;
+}
+
+.dashboard-card {
+  background-color: var(--item-bg);
+  border-radius: 12px;
+  padding: 30px;
+  width: 200px;
+  height: 180px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s, background-color 0.2s;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.dashboard-card:hover {
+  transform: translateY(-5px);
+  background-color: var(--hover-color);
+  box-shadow: 0 8px 15px rgba(0, 0, 0, 0.3);
+}
+
+.card-icon {
+  font-size: 3rem;
+  margin-bottom: 15px;
+}
+
+.dashboard-card h2 {
+  margin: 0 0 10px 0;
+  font-size: 1.4rem;
+  color: var(--text-active);
+}
+
+.dashboard-card p {
+  margin: 0;
+  color: #888;
+  text-align: center;
+  font-size: 0.9rem;
+}
