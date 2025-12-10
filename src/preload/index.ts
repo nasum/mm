@@ -12,6 +12,7 @@ const api = {
     ipcRenderer.on('media-added', callback),
   onMediaRemoved: (callback: (event: IpcRendererEvent, ...args: any[]) => void) => 
     ipcRenderer.on('media-removed', callback),
+  deleteMedia: (filepath: string) => ipcRenderer.invoke('delete-media', filepath),
   removeMediaListener: (channel: string, callback: (...args: any[]) => void) => 
     ipcRenderer.removeListener(channel, callback)
 }

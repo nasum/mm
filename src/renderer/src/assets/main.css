@@ -184,6 +184,7 @@ body {
   align-content: start;
 }
 
+/* Media Grid Cards */
 .media-item {
   background-color: var(--item-bg);
   border-radius: 6px;
@@ -193,6 +194,8 @@ body {
   transition: transform 0.2s, box-shadow 0.2s;
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
   cursor: pointer;
+  position: relative;
+  /* Context for absolute positioning if needed */
 }
 
 .media-item:hover {
@@ -216,17 +219,85 @@ body {
   object-fit: cover;
 }
 
+/* Media Info & Menu */
 .media-info {
   padding: 10px;
   font-size: 0.9rem;
 }
 
+.media-info-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: relative;
+}
+
 .media-name {
-  display: block;
+  flex: 1;
+  min-width: 0;
+  /* Enable flex truncation */
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
   color: var(--text-color);
+  margin-right: 8px;
+}
+
+.menu-container {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.menu-btn {
+  background: transparent;
+  border: none;
+  color: #888;
+  padding: 4px;
+  border-radius: 4px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.2s, color 0.2s;
+}
+
+.menu-btn:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+  color: #fff;
+}
+
+.dropdown-menu {
+  position: absolute;
+  right: 0;
+  bottom: 100%;
+  margin-bottom: 4px;
+  width: 120px;
+  background-color: #252526;
+  border: 1px solid #3e3e42;
+  border-radius: 6px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+  z-index: 20;
+  padding: 4px 0;
+}
+
+.dropdown-item {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 8px 12px;
+  font-size: 0.9rem;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #cccccc;
+}
+
+.dropdown-item:hover {
+  background-color: #37373d;
+}
+
+.dropdown-item.delete-option {
+  color: #ff6b6b;
 }
 
 .empty-state {
@@ -236,6 +307,67 @@ body {
   justify-content: center;
   color: #666;
   font-size: 1.1rem;
+}
+
+/* Media Viewer Modal */
+.media-viewer-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.9);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: fadeIn 0.2s ease-out;
+}
+
+.media-viewer-content {
+  max-width: 90%;
+  max-height: 90%;
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.media-viewer-content img,
+.media-viewer-content video {
+  max-width: 100%;
+  max-height: 90vh;
+  object-fit: contain;
+  box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+}
+
+.close-viewer-btn {
+  position: absolute;
+  top: 20px;
+  right: 30px;
+  background: none;
+  border: none;
+  color: #fff;
+  font-size: 3rem;
+  cursor: pointer;
+  z-index: 1001;
+  opacity: 0.7;
+  transition: opacity 0.2s;
+  line-height: 1;
+}
+
+.close-viewer-btn:hover {
+  opacity: 1;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
 }
 
 /* Settings Page Specifics */

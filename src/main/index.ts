@@ -172,6 +172,16 @@ app.whenReady().then(async () => {
     return true;
   });
 
+  ipcMain.handle('delete-media', async (_, filepath: string) => {
+    try {
+      await fs.remove(filepath);
+      return true;
+    } catch (error) {
+      console.error('Failed to delete media:', error);
+      return false;
+    }
+  });
+
   ipcMain.handle('dialog:openDirectory', async () => {
     const { canceled, filePaths } = await dialog.showOpenDialog({
       properties: ['openDirectory']
