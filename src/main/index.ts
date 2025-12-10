@@ -182,6 +182,30 @@ app.whenReady().then(async () => {
     }
   });
 
+  ipcMain.handle('add-dropped-files', async (_, filePaths: string[]) => {
+    try {
+      const libraryPath = store.get('libraryPath');
+      const results: boolean[] = [];
+      const allowedExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.mp4', '.mov', '.webm'];
+
+      for (const filepath of filePaths) {
+        const ext = path.extname(filepath).toLowerCase();
+        if (allowedExtensions.includes(ext)) {
+          const filename = path.basename(filepath);
+          const dest = path.join(libraryPath, filename);
+          await fs.copy(filepath, dest);
+          results.push(true);
+        } else {
+          results.push(false);
+        }
+      }
+      return results;
+    } catch (error) {
+      console.error('Failed to add dropped files:', error);
+      return filePaths.map(() => false);
+    }
+  });
+
   ipcMain.handle('dialog:openDirectory', async () => {
     const { canceled, filePaths } = await dialog.showOpenDialog({
       properties: ['openDirectory']

@@ -19,6 +19,7 @@ export interface MediaItem {
 function App() {
   const [media, setMedia] = useState<MediaItem[]>([])
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false)
+  const [isDragging, setIsDragging] = useState(false)
 
   useEffect(() => {
     // Initial fetch
@@ -41,9 +42,51 @@ function App() {
     })
   }, [])
 
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    // Only set to false if we are leaving the window
+    if (e.relatedTarget === null) {
+      setIsDragging(false);
+    }
+  };
+
+  const handleDrop = async (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+
+    const files = Array.from(e.dataTransfer.files);
+    // Use exposed webUtils to get the path (required due to context isolation)
+    const paths = files.map(f => window.api.getFilePath(f));
+
+    if (paths.length > 0) {
+      await window.api.addDroppedFiles(paths);
+    }
+  };
+
   return (
     <Router>
-      <div className="app-container">
+      <div
+        className="app-container"
+        onDragOver={handleDragOver}
+        onDragLeave={handleDragLeave}
+        onDrop={handleDrop}
+      >
+        {isDragging && (
+          <div className="drop-overlay">
+            <div className="drop-message">
+              <div className="drop-icon">📂</div>
+              <p>Drop files to import</p>
+            </div>
+          </div>
+        )}
         <Sidebar
           isCollapsed={isSidebarCollapsed}
           onToggle={() => setIsSidebarCollapsed(!isSidebarCollapsed)}

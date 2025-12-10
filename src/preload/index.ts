@@ -1,4 +1,4 @@
-import { contextBridge, ipcRenderer, IpcRendererEvent } from 'electron'
+import { contextBridge, ipcRenderer, IpcRendererEvent, webUtils } from 'electron'
 import { electronAPI } from '@electron-toolkit/preload'
 
 // Custom APIs for renderer
@@ -13,8 +13,10 @@ const api = {
   onMediaRemoved: (callback: (event: IpcRendererEvent, ...args: any[]) => void) => 
     ipcRenderer.on('media-removed', callback),
   deleteMedia: (filepath: string) => ipcRenderer.invoke('delete-media', filepath),
+  addDroppedFiles: (paths: string[]) => ipcRenderer.invoke('add-dropped-files', paths),
   removeMediaListener: (channel: string, callback: (...args: any[]) => void) => 
-    ipcRenderer.removeListener(channel, callback)
+    ipcRenderer.removeListener(channel, callback),
+  getFilePath: (file: File) => webUtils.getPathForFile(file)
 }
 
 // Use `contextBridge` APIs to expose Electron APIs to

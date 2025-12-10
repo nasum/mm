@@ -494,3 +494,36 @@ body {
   text-align: center;
   font-size: 0.9rem;
 }
+
+/* Drop Overlay */
+.drop-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(30, 30, 30, 0.9);
+  z-index: 2000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 4px dashed var(--primary-color);
+  box-sizing: border-box;
+  animation: fadeIn 0.1s ease-out;
+}
+
+.drop-message {
+  text-align: center;
+  color: var(--text-active);
+  pointer-events: none;
+}
+
+.drop-icon {
+  font-size: 4rem;
+  margin-bottom: 20px;
+}
+
+.drop-message p {
+  font-size: 1.5rem;
+  font-weight: 500;
+}
