@@ -14,6 +14,8 @@ declare global {
       deleteMedia: (filepath: string) => Promise<boolean>
       addDroppedFiles: (paths: string[]) => Promise<boolean[]>
       showInFolder: (path: string) => Promise<void>
+      createDirectory: (path: string) => Promise<boolean>
+      renameMedia: (oldPath: string, newPath: string) => Promise<boolean>
       removeMediaListener: (channel: string, callback: (...args: any[]) => void) => void
       getFilePath: (file: File) => string
     }

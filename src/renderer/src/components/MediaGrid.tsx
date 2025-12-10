@@ -4,6 +4,7 @@ import { MediaViewer } from './MediaViewer'
 
 interface MediaGridProps {
     media: MediaItem[]
+    onNavigate?: (path: string) => void
 }
 
 const getFileUrl = (filepath: string) => {
@@ -12,10 +13,20 @@ const getFileUrl = (filepath: string) => {
     return `media:///${filepath.replace(/\\/g, '/')}`;
 }
 
-export function MediaGrid({ media }: MediaGridProps) {
+export function MediaGrid({ media, onNavigate }: MediaGridProps) {
     const [activeMenuId, setActiveMenuId] = useState<number | null>(null);
     const [selectedItem, setSelectedItem] = useState<MediaItem | null>(null);
     const menuRef = useRef<HTMLDivElement>(null);
+
+    // Sort: Directories first, then files
+    const sortedMedia = [...media].sort((a, b) => {
+        if (a.type === 'directory' && b.type !== 'directory') return -1;
+        if (a.type !== 'directory' && b.type === 'directory') return 1;
+        // Then by name or date? Let's use name for now or keep existing order (created_at desc)
+        // Existing order comes from DB (created_at desc).
+        // Let's rely on DB order but prioritize directories.
+        return 0;
+    });
 
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
@@ -45,15 +56,40 @@ export function MediaGrid({ media }: MediaGridProps) {
         setActiveMenuId(null);
     };
 
+    const handleRename = async (item: MediaItem) => {
+        const newName = prompt('Enter new name:', item.filename);
+        if (newName && newName !== item.filename) {
+            const separator = item.filepath.includes('\\') ? '\\' : '/';
+            // Simple logic for parent dir, robustness could be improved but sufficient for now
+            const parentDir = item.filepath.lastIndexOf(separator) !== -1
+                ? item.filepath.substring(0, item.filepath.lastIndexOf(separator))
+                : '';
+
+            if (parentDir) {
+                const newPath = `${parentDir}${separator}${newName}`;
+                await window.api.renameMedia(item.filepath, newPath);
+            }
+        }
+        setActiveMenuId(null);
+    };
+
     return (
         <div className="media-grid">
-            {media.map((item) => (
+            {sortedMedia.map((item) => (
                 <div key={item.id} className="media-item">
                     <div
                         className="media-preview group"
-                        onClick={() => setSelectedItem(item)}
+                        onClick={() => {
+                            if (item.type === 'directory') {
+                                onNavigate?.(item.filepath);
+                            } else {
+                                setSelectedItem(item);
+                            }
+                        }}
                     >
-                        {item.type === 'image' ? (
+                        {item.type === 'directory' ? (
+                            <div className="folder-icon" style={{ fontSize: '4rem', display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%' }}>📁</div>
+                        ) : item.type === 'image' ? (
                             <img src={getFileUrl(item.filepath)} alt={item.filename} />
                         ) : (
                             <video src={getFileUrl(item.filepath)} controls muted />
@@ -88,6 +124,15 @@ export function MediaGrid({ media }: MediaGridProps) {
                                         }}
                                     >
                                         Show in Explorer
+                                    </button>
+                                    <button
+                                        className="dropdown-item"
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            handleRename(item);
+                                        }}
+                                    >
+                                        Rename
                                     </button>
                                     <button
                                         className="dropdown-item delete-option"

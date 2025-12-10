@@ -1,6 +1,11 @@
 import { useNavigate } from 'react-router-dom'
+import { MediaItem } from '../App'
 
-export function Home() {
+interface HomeProps {
+    media: MediaItem[]
+}
+
+export function Home({ media }: HomeProps) {
     const navigate = useNavigate()
 
     return (

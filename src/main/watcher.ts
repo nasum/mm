@@ -50,6 +50,26 @@ export function initWatcher(libraryPath: string, mainWindow: BrowserWindow) {
       // Notify UI
       mainWindow.webContents.send('media-removed', filepath);
       console.log(`Removed: ${filepath}`);
+    })
+    .on('addDir', (filepath) => {
+      // Ignore the root library directory itself if it matches
+      if (filepath === libraryPath) return;
+
+      const filename = path.basename(filepath);
+      try {
+        addMedia(filepath, filename, 'directory', 0);
+        mainWindow.webContents.send('media-added', { filepath, filename, type: 'directory', size: 0 });
+        console.log(`Added Directory: ${filepath}`);
+      } catch (err) {
+        console.error(`Failed to add directory ${filepath}`, err);
+      }
+    })
+    .on('unlinkDir', (filepath) => {
+      if (filepath === libraryPath) return;
+      
+      removeMedia(filepath);
+      mainWindow.webContents.send('media-removed', filepath);
+      console.log(`Removed Directory: ${filepath}`);
     });
 
   return watcher;

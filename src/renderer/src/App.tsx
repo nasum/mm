@@ -11,7 +11,7 @@ export interface MediaItem {
   id: number
   filepath: string
   filename: string
-  type: 'image' | 'video'
+  type: 'image' | 'video' | 'directory'
   size: number
   created_at: string
 }
@@ -93,9 +93,9 @@ function App() {
         />
         <main className="main-content">
           <Routes>
-            <Route path="/" element={<Home />} />
-            <Route path="/photos" element={<Photos media={media.filter(m => m.type === 'image')} />} />
-            <Route path="/videos" element={<Videos media={media.filter(m => m.type === 'video')} />} />
+            <Route path="/" element={<Home media={media} />} />
+            <Route path="/photos" element={<Photos media={media} />} />
+            <Route path="/videos" element={<Videos media={media} />} />
             <Route path="/settings" element={<Settings />} />
           </Routes>
         </main>

@@ -15,6 +15,8 @@ const api = {
   deleteMedia: (filepath: string) => ipcRenderer.invoke('delete-media', filepath),
   addDroppedFiles: (paths: string[]) => ipcRenderer.invoke('add-dropped-files', paths),
   showInFolder: (path: string) => ipcRenderer.invoke('show-item-in-folder', path),
+  createDirectory: (path: string) => ipcRenderer.invoke('create-directory', path),
+  renameMedia: (oldPath: string, newPath: string) => ipcRenderer.invoke('rename-media', { oldPath, newPath }),
   removeMediaListener: (channel: string, callback: (...args: any[]) => void) => 
     ipcRenderer.removeListener(channel, callback),
   getFilePath: (file: File) => webUtils.getPathForFile(file)

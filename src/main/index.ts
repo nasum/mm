@@ -234,6 +234,26 @@ app.whenReady().then(async () => {
     shell.showItemInFolder(filepath);
   });
 
+  ipcMain.handle('create-directory', async (_, dirPath: string) => {
+    try {
+      await fs.ensureDir(dirPath);
+      return true;
+    } catch (error) {
+      console.error('Failed to create directory:', error);
+      return false;
+    }
+  });
+
+  ipcMain.handle('rename-media', async (_, { oldPath, newPath }: { oldPath: string, newPath: string }) => {
+    try {
+      await fs.rename(oldPath, newPath);
+      return true;
+    } catch (error) {
+      console.error('Failed to rename media:', error);
+      return false;
+    }
+  });
+
   ipcMain.handle('dialog:openDirectory', async () => {
     const { canceled, filePaths } = await dialog.showOpenDialog({
       properties: ['openDirectory']
