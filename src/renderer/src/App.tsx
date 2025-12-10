@@ -45,7 +45,11 @@ function App() {
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    setIsDragging(true);
+
+    // Only show overlay if dragging files from OS
+    if (e.dataTransfer.types.includes('Files') && !e.dataTransfer.types.includes('application/json')) {
+      setIsDragging(true);
+    }
   };
 
   const handleDragLeave = (e: React.DragEvent) => {

@@ -5,6 +5,8 @@ import { MediaViewer } from './MediaViewer'
 interface MediaGridProps {
     media: MediaItem[]
     onNavigate?: (path: string) => void
+    onMove?: (item: MediaItem) => void
+    onRename?: (item: MediaItem) => void
 }
 
 const getFileUrl = (filepath: string) => {
@@ -13,18 +15,16 @@ const getFileUrl = (filepath: string) => {
     return `media:///${filepath.replace(/\\/g, '/')}`;
 }
 
-export function MediaGrid({ media, onNavigate }: MediaGridProps) {
+export function MediaGrid({ media, onNavigate, onMove, onRename }: MediaGridProps) {
     const [activeMenuId, setActiveMenuId] = useState<number | null>(null);
     const [selectedItem, setSelectedItem] = useState<MediaItem | null>(null);
+    const [dragOverId, setDragOverId] = useState<number | null>(null);
     const menuRef = useRef<HTMLDivElement>(null);
 
     // Sort: Directories first, then files
     const sortedMedia = [...media].sort((a, b) => {
         if (a.type === 'directory' && b.type !== 'directory') return -1;
         if (a.type !== 'directory' && b.type === 'directory') return 1;
-        // Then by name or date? Let's use name for now or keep existing order (created_at desc)
-        // Existing order comes from DB (created_at desc).
-        // Let's rely on DB order but prioritize directories.
         return 0;
     });
 
@@ -60,7 +60,6 @@ export function MediaGrid({ media, onNavigate }: MediaGridProps) {
         const newName = prompt('Enter new name:', item.filename);
         if (newName && newName !== item.filename) {
             const separator = item.filepath.includes('\\') ? '\\' : '/';
-            // Simple logic for parent dir, robustness could be improved but sufficient for now
             const parentDir = item.filepath.lastIndexOf(separator) !== -1
                 ? item.filepath.substring(0, item.filepath.lastIndexOf(separator))
                 : '';
@@ -73,10 +72,76 @@ export function MediaGrid({ media, onNavigate }: MediaGridProps) {
         setActiveMenuId(null);
     };
 
+    const handleDragStart = (e: React.DragEvent, item: MediaItem) => {
+        e.dataTransfer.setData('application/json', JSON.stringify({
+            filepath: item.filepath,
+            filename: item.filename
+        }));
+        e.dataTransfer.effectAllowed = 'move';
+    };
+
+    const handleDragOver = (e: React.DragEvent, item: MediaItem) => {
+        if (item.type === 'directory') {
+            e.preventDefault(); // Allow drop
+            e.dataTransfer.dropEffect = 'move';
+            if (dragOverId !== item.id) {
+                setDragOverId(item.id);
+            }
+        }
+    };
+
+    const handleDragLeave = (e: React.DragEvent) => {
+        // Prevent flickering by ensuring we're leaving the actual drop target
+        // For simplicity, we might just rely on checking dragOverId state updates carefully,
+        // but here we can reset if needed or just let DragOver update it.
+        // A simple way is to not reset it here but maybe reset it on drop or end.
+        // Or check relatedTarget.
+    };
+
+    // Use onDragEnd to cleanup state if drag is cancelled or completes
+    const handleDragEnd = () => {
+        setDragOverId(null);
+    }
+
+    const handleDrop = async (e: React.DragEvent, targetItem: MediaItem) => {
+        e.preventDefault();
+        setDragOverId(null);
+
+        if (targetItem.type !== 'directory') return;
+
+        try {
+            const data = e.dataTransfer.getData('application/json');
+            if (!data) return;
+
+            const sourceItem = JSON.parse(data);
+            if (sourceItem.filepath === targetItem.filepath) return; // Dropped on self
+
+            const separator = targetItem.filepath.includes('\\') ? '\\' : '/';
+            const newPath = `${targetItem.filepath}${separator}${sourceItem.filename}`;
+
+            // Prevent overwriting or invalid moves check can be added here or backend throws error
+            await window.api.renameMedia(sourceItem.filepath, newPath);
+        } catch (error) {
+            console.error('Drop failed:', error);
+        }
+    };
+
     return (
         <div className="media-grid">
             {sortedMedia.map((item) => (
-                <div key={item.id} className="media-item">
+                <div
+                    key={item.id}
+                    className="media-item"
+                    draggable
+                    onDragStart={(e) => handleDragStart(e, item)}
+                    onDragEnd={handleDragEnd}
+                    onDragOver={(e) => handleDragOver(e, item)}
+                    onDrop={(e) => handleDrop(e, item)}
+                    style={{
+                        outline: dragOverId === item.id ? '2px solid var(--primary-color)' : 'none',
+                        outlineOffset: '2px'
+                    }}
+                >
                     <div
                         className="media-preview group"
                         onClick={() => {
@@ -129,7 +194,20 @@ export function MediaGrid({ media, onNavigate }: MediaGridProps) {
                                         className="dropdown-item"
                                         onClick={(e) => {
                                             e.stopPropagation();
-                                            handleRename(item);
+                                            setActiveMenuId(null);
+                                            onMove?.(item);
+                                        }}
+                                    >
+                                        Move to...
+                                    </button>
+                                    <button
+                                        className="dropdown-item"
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            setActiveMenuId(null);
+                                            if (onRename) {
+                                                onRename(item);
+                                            }
                                         }}
                                     >
                                         Rename

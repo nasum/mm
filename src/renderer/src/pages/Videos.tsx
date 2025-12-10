@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react'
 import { MediaItem } from '../App'
 import { MediaGrid } from '../components/MediaGrid'
 import { CreateFolderModal } from '../components/CreateFolderModal'
+import { MoveToModal } from '../components/MoveToModal'
+import { RenameModal } from '../components/RenameModal'
 
 interface VideosProps {
     media: MediaItem[]
@@ -13,9 +15,15 @@ export function Videos({ media }: VideosProps) {
     const [libraryPath, setLibraryPath] = useState<string>('')
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
 
+    // Modal states
+    const [moveItem, setMoveItem] = useState<MediaItem | null>(null)
+    const [renameItem, setRenameItem] = useState<MediaItem | null>(null)
+
     useEffect(() => {
         window.api.getSettings().then((settings: any) => {
             const libPath = settings.libraryPath;
+            if (!libPath) return;
+
             const separator = libPath.includes('\\') ? '\\' : '/';
             const moviesPath = `${libPath}${separator}movies`;
 
@@ -42,6 +50,37 @@ export function Videos({ media }: VideosProps) {
             alert('Error creating directory')
         }
         setIsCreateModalOpen(false)
+    }
+
+    const handleMoveConfirm = async (targetPath: string) => {
+        if (!moveItem) return
+
+        const separator = targetPath.includes('\\') ? '\\' : '/'
+        const newPath = `${targetPath}${separator}${moveItem.filename}`
+
+        try {
+            await window.api.renameMedia(moveItem.filepath, newPath)
+        } catch (error) {
+            console.error('Move failed', error)
+            alert('Failed to move item')
+        }
+        setMoveItem(null)
+    }
+
+    const handleRenameConfirm = async (newName: string) => {
+        if (!renameItem) return
+
+        const separator = renameItem.filepath.includes('\\') ? '\\' : '/'
+        const parentPath = renameItem.filepath.substring(0, renameItem.filepath.lastIndexOf(separator))
+        const newPath = `${parentPath}${separator}${newName}`
+
+        try {
+            await window.api.renameMedia(renameItem.filepath, newPath)
+        } catch (error) {
+            console.error('Rename failed', error)
+            alert('Failed to rename item')
+        }
+        setRenameItem(null)
     }
 
     const handleNavigateUp = () => {
@@ -87,12 +126,30 @@ export function Videos({ media }: VideosProps) {
             <MediaGrid
                 media={currentItems}
                 onNavigate={(path) => setCurrentPath(path)}
+                onMove={(item) => setMoveItem(item)}
+                onRename={(item) => setRenameItem(item)}
             />
 
             <CreateFolderModal
                 isOpen={isCreateModalOpen}
                 onClose={() => setIsCreateModalOpen(false)}
                 onCreate={handleCreateFolder}
+            />
+
+            <MoveToModal
+                isOpen={!!moveItem}
+                onClose={() => setMoveItem(null)}
+                onConfirm={handleMoveConfirm}
+                item={moveItem}
+                allMedia={media}
+                rootPath={rootPath}
+            />
+
+            <RenameModal
+                isOpen={!!renameItem}
+                onClose={() => setRenameItem(null)}
+                onRename={handleRenameConfirm}
+                currentName={renameItem ? renameItem.filename : ''}
             />
         </div>
     )
