@@ -145,16 +145,29 @@ app.whenReady().then(async () => {
     const { canceled, filePaths } = await dialog.showOpenDialog({
       properties: ['openFile', 'multiSelections'],
       filters: [
-        { name: 'Media', extensions: ['jpg', 'jpeg', 'png', 'gif', 'mp4', 'mov', 'webm'] }
+        { name: 'Media', extensions: ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'mp4', 'mov', 'webm', 'mkv', 'avi'] }
       ]
     });
 
     if (!canceled) {
       const libraryPath = store.get('libraryPath');
       for (const filepath of filePaths) {
+        const ext = path.extname(filepath).toLowerCase();
         const filename = path.basename(filepath);
-        const dest = path.join(libraryPath, filename);
-        await fs.copy(filepath, dest);
+        
+        let subDir = '';
+        if (['.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp'].includes(ext)) {
+          subDir = 'images';
+        } else if (['.mp4', '.mov', '.webm', '.mkv', '.avi'].includes(ext)) {
+          subDir = 'movies';
+        }
+
+        if (subDir) {
+            const destDir = path.join(libraryPath, subDir);
+            await fs.ensureDir(destDir);
+            const dest = path.join(destDir, filename);
+            await fs.copy(filepath, dest);
+        }
       }
     }
   });
@@ -186,13 +199,24 @@ app.whenReady().then(async () => {
     try {
       const libraryPath = store.get('libraryPath');
       const results: boolean[] = [];
-      const allowedExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.mp4', '.mov', '.webm'];
+      const imageExts = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp'];
+      const videoExts = ['.mp4', '.mov', '.webm', '.mkv', '.avi'];
 
       for (const filepath of filePaths) {
         const ext = path.extname(filepath).toLowerCase();
-        if (allowedExtensions.includes(ext)) {
+        let subDir = '';
+        
+        if (imageExts.includes(ext)) {
+          subDir = 'images';
+        } else if (videoExts.includes(ext)) {
+          subDir = 'movies';
+        }
+
+        if (subDir) {
           const filename = path.basename(filepath);
-          const dest = path.join(libraryPath, filename);
+          const destDir = path.join(libraryPath, subDir);
+          await fs.ensureDir(destDir);
+          const dest = path.join(destDir, filename);
           await fs.copy(filepath, dest);
           results.push(true);
         } else {
@@ -204,6 +228,10 @@ app.whenReady().then(async () => {
       console.error('Failed to add dropped files:', error);
       return filePaths.map(() => false);
     }
+  });
+
+  ipcMain.handle('show-item-in-folder', (_, filepath: string) => {
+    shell.showItemInFolder(filepath);
   });
 
   ipcMain.handle('dialog:openDirectory', async () => {

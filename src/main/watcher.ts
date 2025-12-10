@@ -14,11 +14,6 @@ export function initWatcher(libraryPath: string, mainWindow: BrowserWindow) {
   const watcher = chokidar.watch(libraryPath, {
     ignored: /(^|[\/\\])\../, // ignore dotfiles
     persistent: true,
-    depth: 0, // Top level only? Or recursive? User said "put in directory", implied flat or recursive?
-              // "Application finds unindexed...". Usually recursive is better.
-              // Let's stick to depth 0 (flat) for simplicity unless user requested folders.
-              // "Place images in it". Usually flat is easier. I'll do non-recursive for now or maybe depth 1?
-              // Let's do recursive, no harm.
     ignoreInitial: false, // Index existing files on start
     awaitWriteFinish: {
       stabilityThreshold: 2000,

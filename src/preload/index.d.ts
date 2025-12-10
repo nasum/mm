@@ -13,6 +13,7 @@ declare global {
       onMediaRemoved: (callback: (event: any, path: string) => void) => void
       deleteMedia: (filepath: string) => Promise<boolean>
       addDroppedFiles: (paths: string[]) => Promise<boolean[]>
+      showInFolder: (path: string) => Promise<void>
       removeMediaListener: (channel: string, callback: (...args: any[]) => void) => void
       getFilePath: (file: File) => string
     }

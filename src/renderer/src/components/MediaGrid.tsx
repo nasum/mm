@@ -80,6 +80,16 @@ export function MediaGrid({ media }: MediaGridProps) {
                             {activeMenuId === item.id && (
                                 <div ref={menuRef} className="dropdown-menu">
                                     <button
+                                        className="dropdown-item"
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            window.api.showInFolder(item.filepath);
+                                            setActiveMenuId(null);
+                                        }}
+                                    >
+                                        Show in Explorer
+                                    </button>
+                                    <button
                                         className="dropdown-item delete-option"
                                         onClick={(e) => {
                                             e.stopPropagation();
