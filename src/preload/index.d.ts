@@ -23,6 +23,10 @@ declare global {
       createTag: (name: string) => Promise<{ id: number; name: string }>
       addTagToMedia: (mediaId: number, tagId: number) => Promise<void>
       removeTagFromMedia: (mediaId: number, tagId: number) => Promise<void>
+      // Data Path
+      getUserDataPath: () => Promise<string>
+      openUserDataFolder: () => Promise<void>
+      changeUserDataPath: (newPath: string) => Promise<boolean>
     }
   }
 }

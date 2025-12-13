@@ -7,6 +7,22 @@ import { initWatcher } from './watcher'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
 
+// Custom Data Path Logic
+const defaultUserDataPath = app.getPath('userData');
+const pointerFilePath = path.join(defaultUserDataPath, 'data-path.json');
+
+try {
+  if (fs.existsSync(pointerFilePath)) {
+    const pointerData = fs.readJSONSync(pointerFilePath);
+    if (pointerData.customPath) {
+      console.log('Using custom user data path:', pointerData.customPath);
+      app.setPath('userData', pointerData.customPath);
+    }
+  }
+} catch (error) {
+  console.error('Failed to load custom data path:', error);
+}
+
 // Register privileged scheme BEFORE app.whenReady
 const { protocol } = require('electron')
 protocol.registerSchemesAsPrivileged([
@@ -299,6 +315,43 @@ app.whenReady().then(async () => {
       return null;
     } else {
       return filePaths[0];
+    }
+  });
+
+  // User Data Path Handlers
+  ipcMain.handle('get-user-data-path', () => {
+    return app.getPath('userData');
+  });
+
+  ipcMain.handle('open-user-data-folder', () => {
+    shell.openPath(app.getPath('userData'));
+  });
+
+  ipcMain.handle('change-user-data-path', async (_, newPath: string) => {
+    try {
+      const currentPath = app.getPath('userData');
+      
+      // Don't do anything if path hasn't changed
+      if (currentPath === newPath) return false;
+
+      // Ensure new directory exists
+      await fs.ensureDir(newPath);
+
+      // Copy all files from current to new
+      console.log(`Copying data from ${currentPath} to ${newPath}`);
+      await fs.copy(currentPath, newPath);
+
+      // Write pointer file to DEFAULT location
+      await fs.writeJSON(pointerFilePath, { customPath: newPath });
+      
+      // Relaunch to apply changes
+      app.relaunch();
+      app.exit(0);
+
+      return true;
+    } catch (error) {
+      console.error('Failed to change user data path:', error);
+      return false;
     }
   });
 

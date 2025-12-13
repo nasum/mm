@@ -24,7 +24,11 @@ const api = {
   getTags: () => ipcRenderer.invoke('get-tags'),
   createTag: (name: string) => ipcRenderer.invoke('create-tag', name),
   addTagToMedia: (mediaId: number, tagId: number) => ipcRenderer.invoke('add-tag-to-media', { mediaId, tagId }),
-  removeTagFromMedia: (mediaId: number, tagId: number) => ipcRenderer.invoke('remove-tag-from-media', { mediaId, tagId })
+  removeTagFromMedia: (mediaId: number, tagId: number) => ipcRenderer.invoke('remove-tag-from-media', { mediaId, tagId }),
+  // Data Path
+  getUserDataPath: () => ipcRenderer.invoke('get-user-data-path'),
+  openUserDataFolder: () => ipcRenderer.invoke('open-user-data-folder'),
+  changeUserDataPath: (newPath: string) => ipcRenderer.invoke('change-user-data-path', newPath)
 }
 
 // Use `contextBridge` APIs to expose Electron APIs to
