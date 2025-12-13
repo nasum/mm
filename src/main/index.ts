@@ -24,6 +24,12 @@ protocol.registerSchemesAsPrivileged([
 
 interface StoreSchema {
   libraryPath: string;
+  windowBounds?: {
+    width: number;
+    height: number;
+    x: number;
+    y: number;
+  };
 }
 
 let store: any; // Using any to avoid type issues with dynamic import
@@ -41,9 +47,14 @@ function restartWatcher(libraryPath: string) {
 
 function createWindow(): void {
   // Create the browser window.
+  const bounds = store.get('windowBounds');
+
+  // Create the browser window.
   mainWindow = new BrowserWindow({
-    width: 900,
-    height: 670,
+    width: bounds?.width || 900,
+    height: bounds?.height || 670,
+    x: bounds?.x,
+    y: bounds?.y,
     show: false,
     autoHideMenuBar: true,
     ...(process.platform === 'linux' ? { icon } : {}),
@@ -53,6 +64,13 @@ function createWindow(): void {
       webSecurity: false
     }
   })
+
+  mainWindow.on('close', () => {
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      const bounds = mainWindow.getBounds();
+      store.set('windowBounds', bounds);
+    }
+  });
 
   mainWindow.on('ready-to-show', () => {
     mainWindow?.show()

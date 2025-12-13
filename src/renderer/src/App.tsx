@@ -28,8 +28,17 @@ export interface MediaItem {
 
 function App() {
   const [media, setMedia] = useState<MediaItem[]>([])
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false)
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(() => {
+    const saved = localStorage.getItem('sidebarCollapsed');
+    return saved === 'true';
+  })
   const [isDragging, setIsDragging] = useState(false)
+
+  const toggleSidebar = () => {
+    const newState = !isSidebarCollapsed;
+    setIsSidebarCollapsed(newState);
+    localStorage.setItem('sidebarCollapsed', String(newState));
+  }
 
   useEffect(() => {
     // Initial fetch
@@ -103,7 +112,7 @@ function App() {
         )}
         <Sidebar
           isCollapsed={isSidebarCollapsed}
-          onToggle={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
+          onToggle={toggleSidebar}
         />
         <main className="main-content">
           <Routes>
