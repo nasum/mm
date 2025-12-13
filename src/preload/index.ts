@@ -19,7 +19,12 @@ const api = {
   renameMedia: (oldPath: string, newPath: string) => ipcRenderer.invoke('rename-media', { oldPath, newPath }),
   removeMediaListener: (channel: string, callback: (...args: any[]) => void) => 
     ipcRenderer.removeListener(channel, callback),
-  getFilePath: (file: File) => webUtils.getPathForFile(file)
+  getFilePath: (file: File) => webUtils.getPathForFile(file),
+  // Tags
+  getTags: () => ipcRenderer.invoke('get-tags'),
+  createTag: (name: string) => ipcRenderer.invoke('create-tag', name),
+  addTagToMedia: (mediaId: number, tagId: number) => ipcRenderer.invoke('add-tag-to-media', { mediaId, tagId }),
+  removeTagFromMedia: (mediaId: number, tagId: number) => ipcRenderer.invoke('remove-tag-from-media', { mediaId, tagId })
 }
 
 // Use `contextBridge` APIs to expose Electron APIs to

@@ -18,6 +18,11 @@ declare global {
       renameMedia: (oldPath: string, newPath: string) => Promise<boolean>
       removeMediaListener: (channel: string, callback: (...args: any[]) => void) => void
       getFilePath: (file: File) => string
+      // Tags
+      getTags: () => Promise<{ id: number; name: string; count?: number }[]>
+      createTag: (name: string) => Promise<{ id: number; name: string }>
+      addTagToMedia: (mediaId: number, tagId: number) => Promise<void>
+      removeTagFromMedia: (mediaId: number, tagId: number) => Promise<void>
     }
   }
 }

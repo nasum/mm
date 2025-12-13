@@ -4,6 +4,7 @@ import { MediaGrid } from '../components/MediaGrid'
 import { CreateFolderModal } from '../components/CreateFolderModal'
 import { MoveToModal } from '../components/MoveToModal'
 import { RenameModal } from '../components/RenameModal'
+import { useLocation } from 'react-router-dom'
 
 interface PhotosProps {
     media: MediaItem[]
@@ -14,6 +15,7 @@ export function Photos({ media }: PhotosProps) {
     const [rootPath, setRootPath] = useState<string>('')
     const [libraryPath, setLibraryPath] = useState<string>('')
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
+    const location = useLocation()
 
     // Modal states
     const [moveItem, setMoveItem] = useState<MediaItem | null>(null)
@@ -98,6 +100,16 @@ export function Photos({ media }: PhotosProps) {
     }
 
     const currentItems = media.filter(item => {
+        const tagId = new URLSearchParams(location.search).get('tag');
+
+        if (tagId) {
+            const hasTag = item.tags && item.tags.some(t => t.id === Number(tagId));
+            // Show images matching tag. 
+            // Ideally we should also show videos if this page supported it, 
+            // but this is Photos page so only images.
+            return hasTag && item.type === 'image';
+        }
+
         if (!currentPath) return false;
 
         const isChild = getParentPath(item.filepath) === currentPath;

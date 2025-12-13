@@ -7,6 +7,12 @@ import { Photos } from './pages/Photos'
 import { Videos } from './pages/Videos'
 import { Settings } from './pages/Settings'
 
+export interface Tag {
+  id: number
+  name: string
+  count?: number
+}
+
 export interface MediaItem {
   id: number
   filepath: string
@@ -14,6 +20,7 @@ export interface MediaItem {
   type: 'image' | 'video' | 'directory'
   size: number
   created_at: string
+  tags: Tag[]
 }
 
 function App() {

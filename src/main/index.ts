@@ -2,7 +2,7 @@ import { app, shell, BrowserWindow, ipcMain, dialog } from 'electron'
 import { join } from 'path'
 import path from 'path'
 import fs from 'fs-extra'
-import { initDatabase, getAllMedia, clearAllMedia } from './database'
+import { initDatabase, getAllMedia, clearAllMedia, getAllTags, createTag, addTagToMedia, removeTagFromMedia } from './database'
 import { initWatcher } from './watcher'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
@@ -244,6 +244,7 @@ app.whenReady().then(async () => {
     }
   });
 
+
   ipcMain.handle('rename-media', async (_, { oldPath, newPath }: { oldPath: string, newPath: string }) => {
     try {
       await fs.rename(oldPath, newPath);
@@ -253,6 +254,24 @@ app.whenReady().then(async () => {
       return false;
     }
   });
+
+  // Tag IPC handlers
+  ipcMain.handle('get-tags', () => {
+    return getAllTags();
+  });
+
+  ipcMain.handle('create-tag', (_, name: string) => {
+    return createTag(name);
+  });
+
+  ipcMain.handle('add-tag-to-media', (_, { mediaId, tagId }: { mediaId: number, tagId: number }) => {
+    return addTagToMedia(mediaId, tagId);
+  });
+
+  ipcMain.handle('remove-tag-from-media', (_, { mediaId, tagId }: { mediaId: number, tagId: number }) => {
+    return removeTagFromMedia(mediaId, tagId);
+  });
+
 
   ipcMain.handle('dialog:openDirectory', async () => {
     const { canceled, filePaths } = await dialog.showOpenDialog({

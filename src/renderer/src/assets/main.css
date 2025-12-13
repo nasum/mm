@@ -595,3 +595,189 @@ body {
   margin-bottom: 20px;
   color: var(--text-active);
 }
+
+/* Tag System Styles */
+.sidebar-section {
+  padding: 20px;
+  border-top: 1px solid var(--border-color);
+}
+
+.sidebar-section h3 {
+  margin-top: 0;
+  margin-bottom: 15px;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  color: #666;
+  letter-spacing: 0.5px;
+}
+
+.tag-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.tag-list li {
+  margin-bottom: 4px;
+}
+
+.tag-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 6px 10px;
+  background: none;
+  border: none;
+  border-radius: 4px;
+  color: var(--text-color);
+  cursor: pointer;
+  text-align: left;
+  font-size: 0.9rem;
+  transition: all 0.2s;
+}
+
+.tag-item:hover {
+  background-color: var(--hover-color);
+  color: var(--text-active);
+}
+
+.tag-item.active {
+  background-color: var(--active-bg);
+  color: var(--primary-color);
+  font-weight: 500;
+}
+
+.tag-name {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-right: 8px;
+}
+
+.tag-count {
+  background-color: #3e3e42;
+  color: #aaa;
+  font-size: 0.75rem;
+  padding: 2px 6px;
+  border-radius: 10px;
+  min-width: 16px;
+  text-align: center;
+}
+
+.tag-item:hover .tag-count {
+  background-color: #4e4e52;
+  color: #fff;
+}
+
+.tag-item.active .tag-count {
+  background-color: var(--primary-color);
+  color: #fff;
+}
+
+/* Media Viewer Tags Overlay */
+.media-tags-overlay {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  padding: 20px;
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.8), transparent);
+  pointer-events: none;
+  /* Allow clicking through to close */
+  display: flex;
+  justify-content: center;
+}
+
+.tags-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  pointer-events: auto;
+  /* Enable interaction with tags */
+}
+
+.media-tag {
+  background-color: rgba(55, 148, 255, 0.2);
+  border: 1px solid rgba(55, 148, 255, 0.4);
+  color: #fff;
+  padding: 4px 10px;
+  border-radius: 16px;
+  font-size: 0.9rem;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  backdrop-filter: blur(4px);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+.remove-tag-btn {
+  background: none;
+  border: none;
+  color: rgba(255, 255, 255, 0.7);
+  cursor: pointer;
+  padding: 0;
+  font-size: 1.1rem;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+}
+
+.remove-tag-btn:hover {
+  color: #fff;
+}
+
+.add-tag-btn {
+  background-color: rgba(255, 255, 255, 0.1);
+  border: 1px dashed rgba(255, 255, 255, 0.3);
+  color: #fff;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.add-tag-btn:hover {
+  background-color: rgba(255, 255, 255, 0.2);
+  border-color: #fff;
+}
+
+.add-tag-input-container {
+  display: flex;
+  background-color: #252526;
+  border-radius: 16px;
+  padding: 2px;
+  border: 1px solid var(--primary-color);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.add-tag-input-container input {
+  background: none;
+  border: none;
+  color: #fff;
+  padding: 4px 10px;
+  font-size: 0.9rem;
+  width: 100px;
+  outline: none;
+}
+
+.add-tag-input-container button {
+  background-color: var(--primary-color);
+  color: #fff;
+  border: none;
+  border-radius: 14px;
+  padding: 0 10px;
+  cursor: pointer;
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+
+.modal-content h3 {
+  margin-top: 0;
+  margin-bottom: 20px;
+  color: var(--text-active);
+}
