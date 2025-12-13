@@ -41,6 +41,7 @@ function createTables() {
   `;
   db.exec(createTagsTable);
 
+  /* Existing table creation... */
   const createMediaTagsTable = `
     CREATE TABLE IF NOT EXISTS media_tags (
       media_id INTEGER,
@@ -51,6 +52,9 @@ function createTables() {
     );
   `;
   db.exec(createMediaTagsTable);
+
+
+
 }
 
 export function addMedia(filepath: string, filename: string, type: string, size: number) {

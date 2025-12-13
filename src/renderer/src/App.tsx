@@ -6,11 +6,14 @@ import { Home } from './pages/Home'
 import { Photos } from './pages/Photos'
 import { Videos } from './pages/Videos'
 import { Settings } from './pages/Settings'
+import { TagResults } from './pages/TagResults'
+import { TagList } from './pages/TagList'
 
 export interface Tag {
   id: number
   name: string
   count?: number
+  last_attached?: string
 }
 
 export interface MediaItem {
@@ -107,6 +110,8 @@ function App() {
             <Route path="/" element={<Home media={media} />} />
             <Route path="/photos" element={<Photos media={media} />} />
             <Route path="/videos" element={<Videos media={media} />} />
+            <Route path="/tags" element={<TagResults media={media} />} />
+            <Route path="/tags-list" element={<TagList />} />
             <Route path="/settings" element={<Settings />} />
           </Routes>
         </main>

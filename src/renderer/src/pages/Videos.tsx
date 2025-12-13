@@ -4,7 +4,6 @@ import { MediaGrid } from '../components/MediaGrid'
 import { CreateFolderModal } from '../components/CreateFolderModal'
 import { MoveToModal } from '../components/MoveToModal'
 import { RenameModal } from '../components/RenameModal'
-import { useLocation } from 'react-router-dom'
 
 interface VideosProps {
     media: MediaItem[]
@@ -15,7 +14,6 @@ export function Videos({ media }: VideosProps) {
     const [rootPath, setRootPath] = useState<string>('')
     const [libraryPath, setLibraryPath] = useState<string>('')
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
-    const location = useLocation()
 
     // Modal states
     const [moveItem, setMoveItem] = useState<MediaItem | null>(null)
@@ -98,13 +96,6 @@ export function Videos({ media }: VideosProps) {
     }
 
     const currentItems = media.filter(item => {
-        const tagId = new URLSearchParams(location.search).get('tag');
-
-        if (tagId) {
-            const hasTag = item.tags && item.tags.some(t => t.id === Number(tagId));
-            return hasTag && item.type === 'video';
-        }
-
         if (!currentPath) return false;
 
         const isChild = getParentPath(item.filepath) === currentPath;
