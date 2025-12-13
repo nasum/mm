@@ -48,7 +48,6 @@ function App() {
 
     // Listeners
     window.api.onMediaAdded((_event, item) => {
-      console.log('Added raw:', item);
       setMedia((prev) => {
         // Avoid duplicates just in case
         if (prev.find(m => m.filepath === item.filepath)) return prev;

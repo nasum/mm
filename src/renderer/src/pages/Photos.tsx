@@ -130,7 +130,6 @@ export function Photos({ media }: PhotosProps) {
                 media={currentItems}
                 onNavigate={(path) => setCurrentPath(path)}
                 onMove={(item) => {
-                    console.log('Open Move Modal for:', item);
                     setMoveItem(item);
                 }}
                 onRename={(item) => setRenameItem(item)}

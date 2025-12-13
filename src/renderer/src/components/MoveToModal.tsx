@@ -17,7 +17,6 @@ export function MoveToModal({ isOpen, onClose, onConfirm, item, allMedia, rootPa
 
     useEffect(() => {
         if (isOpen && item) {
-            console.log('MoveToModal - Item:', item.filename);
             window.api.getSettings().then((settings: any) => {
                 const libPath = settings.libraryPath || '';
                 setLibraryPath(libPath);
@@ -34,7 +33,6 @@ export function MoveToModal({ isOpen, onClose, onConfirm, item, allMedia, rootPa
 
     if (!isOpen || !item) return null
 
-    const separator = currentPath.includes('\\') ? '\\' : '/'
 
     const getParentPath = (path: string) => {
         const sep = path.includes('\\') ? '\\' : '/'

@@ -144,12 +144,7 @@ app.whenReady().then(async () => {
       // Ensure file protocol has 3 slashes for Windows absolute paths
       const finalUrl = 'file:///' + fileUrl.replace(/\\/g, '/');
       
-      console.log('Media Request:', {
-        original: request.url,
-        decoded: decodedUrl,
-        finalPath: filePath,
-        fetchUrl: finalUrl
-      });
+
       
       return net.fetch(finalUrl);
     } catch (e) {
@@ -338,7 +333,7 @@ app.whenReady().then(async () => {
       await fs.ensureDir(newPath);
 
       // Copy all files from current to new
-      console.log(`Copying data from ${currentPath} to ${newPath}`);
+
       await fs.copy(currentPath, newPath);
 
       // Write pointer file to DEFAULT location
