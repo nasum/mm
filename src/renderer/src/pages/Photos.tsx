@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { MediaItem } from '../types'
 import { MediaGrid } from '../components/MediaGrid'
 import { CreateFolderModal } from '../components/CreateFolderModal'
@@ -10,11 +11,14 @@ interface PhotosProps {
 }
 
 export function Photos({ media }: PhotosProps) {
-    const [currentPath, setCurrentPath] = useState<string>('')
+    const [searchParams, setSearchParams] = useSearchParams()
     const [rootPath, setRootPath] = useState<string>('')
     const [libraryPath, setLibraryPath] = useState<string>('')
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
 
+    // Derived current path from URL or fallback to rootPath
+    // We defer using rootPath until it is loaded
+    const currentPath = searchParams.get('path') || rootPath
 
     // Modal states
     const [moveItems, setMoveItems] = useState<MediaItem[]>([])
@@ -31,8 +35,9 @@ export function Photos({ media }: PhotosProps) {
             setLibraryPath(libPath);
             setRootPath(imagesPath);
 
-            if (!currentPath) {
-                setCurrentPath(imagesPath);
+            // If no path in URL, set it to root (replace to avoid back button loop)
+            if (!searchParams.get('path')) {
+                setSearchParams({ path: imagesPath }, { replace: true });
             }
         })
     }, [])
@@ -91,7 +96,7 @@ export function Photos({ media }: PhotosProps) {
         if (currentPath === rootPath) return
         const separator = currentPath.includes('\\') ? '\\' : '/'
         const parentPath = currentPath.substring(0, currentPath.lastIndexOf(separator))
-        setCurrentPath(parentPath)
+        setSearchParams({ path: parentPath })
     }
 
     const getParentPath = (path: string) => {
@@ -129,7 +134,7 @@ export function Photos({ media }: PhotosProps) {
 
             <MediaGrid
                 media={currentItems}
-                onNavigate={(path) => setCurrentPath(path)}
+                onNavigate={(path) => setSearchParams({ path })}
                 onMove={(items) => {
                     setMoveItems(items);
                 }}

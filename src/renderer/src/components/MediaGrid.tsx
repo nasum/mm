@@ -3,13 +3,6 @@ import { useState, useEffect, useRef, forwardRef } from 'react'
 import { MediaViewer } from './MediaViewer'
 import { VirtuosoGrid } from 'react-virtuoso'
 
-interface MediaGridProps {
-    media: MediaItem[]
-    onNavigate?: (path: string) => void
-    onMove?: (items: MediaItem[]) => void
-    onRename?: (item: MediaItem) => void
-}
-
 const getFileUrl = (filepath: string) => {
     // Use custom protocol to bypass security restrictions
     // Add extra slash to ensure it's treated as absolute path with empty host
@@ -41,6 +34,41 @@ const GridItemContainer = ({ children, ...props }: React.ComponentPropsWithoutRe
         {children}
     </div>
 );
+
+const Thumbnail = ({ item }: { item: MediaItem, isSelected: boolean }) => {
+    const [error, setError] = useState(false);
+
+    if (error) {
+        return (
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', background: '#2a2a2a', color: '#555', borderRadius: '4px' }}>
+                <span title="File not found">⚠️</span>
+            </div>
+        );
+    }
+
+    if (item.type === 'directory') {
+        return <div className="folder-icon" style={{ fontSize: '4rem', display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%' }}>📁</div>;
+    }
+
+    if (item.type === 'video') {
+        return <video src={getFileUrl(item.filepath)} controls muted onError={() => setError(true)} />;
+    }
+
+    return (
+        <img
+            src={getFileUrl(item.filepath)}
+            alt={item.filename}
+            onError={() => setError(true)}
+        />
+    );
+}
+
+interface MediaGridProps {
+    media: MediaItem[]
+    onNavigate?: (path: string) => void
+    onMove?: (items: MediaItem[]) => void
+    onRename?: (item: MediaItem) => void
+}
 
 export function MediaGrid({ media, onNavigate, onMove, onRename }: MediaGridProps) {
     const [activeMenuId, setActiveMenuId] = useState<number | null>(null);
@@ -259,13 +287,7 @@ export function MediaGrid({ media, onNavigate, onMove, onRename }: MediaGridProp
                                     </div>
                                 )}
 
-                                {item.type === 'directory' ? (
-                                    <div className="folder-icon" style={{ fontSize: '4rem', display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%' }}>📁</div>
-                                ) : item.type === 'image' ? (
-                                    <img src={getFileUrl(item.filepath)} alt={item.filename} />
-                                ) : (
-                                    <video src={getFileUrl(item.filepath)} controls muted />
-                                )}
+                                <Thumbnail item={item} isSelected={isSelected} />
                             </div>
                             <div className="media-info media-info-row">
                                 <span className="media-name" title={item.filename}>{item.filename}</span>
@@ -413,7 +435,32 @@ export function MediaGrid({ media, onNavigate, onMove, onRename }: MediaGridProp
             )}
 
             {selectedItem && (
-                <MediaViewer item={selectedItem} onClose={() => setSelectedItem(null)} />
+                <MediaViewer
+                    item={selectedItem}
+                    onClose={() => setSelectedItem(null)}
+                    onNext={() => {
+                        const navigableMedia = sortedMedia.filter(m => m.type !== 'directory');
+                        const currentIndex = navigableMedia.findIndex(m => m.id === selectedItem.id);
+                        if (currentIndex === -1) return;
+                        if (currentIndex < navigableMedia.length - 1) {
+                            setSelectedItem(navigableMedia[currentIndex + 1]);
+                        } else {
+                            setSelectedItem(navigableMedia[0]);
+                        }
+                    }}
+                    onPrevious={() => {
+                        const navigableMedia = sortedMedia.filter(m => m.type !== 'directory');
+                        const currentIndex = navigableMedia.findIndex(m => m.id === selectedItem.id);
+                        if (currentIndex === -1) return;
+                        if (currentIndex > 0) {
+                            setSelectedItem(navigableMedia[currentIndex - 1]);
+                        } else {
+                            setSelectedItem(navigableMedia[navigableMedia.length - 1]);
+                        }
+                    }}
+                    hasNext={sortedMedia.some(m => m.type !== 'directory') && sortedMedia.filter(m => m.type !== 'directory').length > 1}
+                    hasPrevious={sortedMedia.some(m => m.type !== 'directory') && sortedMedia.filter(m => m.type !== 'directory').length > 1}
+                />
             )}
         </div>
     )
