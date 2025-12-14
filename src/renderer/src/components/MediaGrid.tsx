@@ -1,5 +1,5 @@
 import { MediaItem } from '../types'
-import { useState, useEffect, useRef, forwardRef } from 'react'
+import { useState, useEffect, useRef, forwardRef, useMemo } from 'react'
 import { MediaViewer } from './MediaViewer'
 import { VirtuosoGrid } from 'react-virtuoso'
 
@@ -68,9 +68,12 @@ interface MediaGridProps {
     onNavigate?: (path: string) => void
     onMove?: (items: MediaItem[]) => void
     onRename?: (item: MediaItem) => void
+    onSlideshow?: (item: MediaItem) => void
+    onSlideshowClose?: () => void
+    autoPlay?: boolean
 }
 
-export function MediaGrid({ media, onNavigate, onMove, onRename }: MediaGridProps) {
+export function MediaGrid({ media, onNavigate, onMove, onRename, onSlideshow, onSlideshowClose, autoPlay = false }: MediaGridProps) {
     const [activeMenuId, setActiveMenuId] = useState<number | null>(null);
     const [selectedItem, setSelectedItem] = useState<MediaItem | null>(null);
     const [dragOverId, setDragOverId] = useState<number | null>(null);
@@ -80,13 +83,39 @@ export function MediaGrid({ media, onNavigate, onMove, onRename }: MediaGridProp
     const menuRef = useRef<HTMLDivElement>(null);
     const longPressTimer = useRef<NodeJS.Timeout | null>(null);
     const isLongPressTriggered = useRef(false);
+    const hasAutoPlayed = useRef(false);
 
     // Sort: Directories first, then files
-    const sortedMedia = [...media].sort((a, b) => {
-        if (a.type === 'directory' && b.type !== 'directory') return -1;
-        if (a.type !== 'directory' && b.type === 'directory') return 1;
-        return 0;
-    });
+    const sortedMedia = useMemo(() => {
+        return [...media].sort((a, b) => {
+            if (a.type === 'directory' && b.type !== 'directory') return -1;
+            if (a.type !== 'directory' && b.type === 'directory') return 1;
+            return 0;
+        });
+    }, [media]);
+
+    useEffect(() => {
+        // Reset autoPlay state when media changes (navigated to new folder)
+        hasAutoPlayed.current = false;
+        setSelectedItem(null);
+    }, [media]);
+
+    useEffect(() => {
+        if (!autoPlay) {
+            hasAutoPlayed.current = false;
+        }
+    }, [autoPlay]);
+
+    useEffect(() => {
+        if (autoPlay && !hasAutoPlayed.current && sortedMedia.length > 0) {
+            // Find first playable item
+            const firstPlayable = sortedMedia.find(m => m.type !== 'directory');
+            if (firstPlayable) {
+                setSelectedItem(firstPlayable);
+                hasAutoPlayed.current = true;
+            }
+        }
+    }, [autoPlay, sortedMedia]);
 
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
@@ -323,6 +352,18 @@ export function MediaGrid({ media, onNavigate, onMove, onRename }: MediaGridProp
                                                 >
                                                     Show in Explorer
                                                 </button>
+                                                {item.type === 'directory' && (
+                                                    <button
+                                                        className="dropdown-item"
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            setActiveMenuId(null);
+                                                            onSlideshow?.(item);
+                                                        }}
+                                                    >
+                                                        ▶ Play Slideshow
+                                                    </button>
+                                                )}
                                                 <button
                                                     className="dropdown-item"
                                                     onClick={(e) => {
@@ -437,7 +478,13 @@ export function MediaGrid({ media, onNavigate, onMove, onRename }: MediaGridProp
             {selectedItem && (
                 <MediaViewer
                     item={selectedItem}
-                    onClose={() => setSelectedItem(null)}
+                    items={sortedMedia.filter(m => m.type !== 'directory')}
+                    onClose={() => {
+                        setSelectedItem(null);
+                        onSlideshowClose?.();
+                    }}
+                    onJumpTo={setSelectedItem}
+                    autoPlay={autoPlay}
                     onNext={() => {
                         const navigableMedia = sortedMedia.filter(m => m.type !== 'directory');
                         const currentIndex = navigableMedia.findIndex(m => m.id === selectedItem.id);

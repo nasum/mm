@@ -58,6 +58,11 @@ export function Photos({ media }: PhotosProps) {
         setIsCreateModalOpen(false)
     }
 
+    const handleSlideshow = (item: MediaItem) => {
+        if (item.type !== 'directory') return;
+        setSearchParams({ path: item.filepath, slideshow: 'true' });
+    }
+
     const handleMoveConfirm = async (targetPath: string) => {
         if (moveItems.length === 0) return
 
@@ -127,9 +132,18 @@ export function Photos({ media }: PhotosProps) {
                         {currentPath.replace(libraryPath, '~')}
                     </span>
                 </div>
-                <button onClick={() => setIsCreateModalOpen(true)} className="btn-new-folder">
-                    + New Folder
-                </button>
+                <div style={{ display: 'flex', gap: '8px' }}>
+                    <button
+                        onClick={() => setSearchParams({ path: currentPath, slideshow: 'true' })}
+                        className="btn-new-folder"
+                        style={{ backgroundColor: '#28a745' }}
+                    >
+                        ▶ Play Slideshow
+                    </button>
+                    <button onClick={() => setIsCreateModalOpen(true)} className="btn-new-folder">
+                        + New Folder
+                    </button>
+                </div>
             </header>
 
             <MediaGrid
@@ -139,6 +153,13 @@ export function Photos({ media }: PhotosProps) {
                     setMoveItems(items);
                 }}
                 onRename={(item) => setRenameItem(item)}
+                onSlideshow={handleSlideshow}
+                onSlideshowClose={() => {
+                    const newParams = new URLSearchParams(searchParams);
+                    newParams.delete('slideshow');
+                    setSearchParams(newParams);
+                }}
+                autoPlay={searchParams.get('slideshow') === 'true'}
             />
 
             <CreateFolderModal

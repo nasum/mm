@@ -3,23 +3,60 @@ import { MediaItem, Tag } from '../types'
 
 interface MediaViewerProps {
     item: MediaItem
+    items?: MediaItem[]
     onClose: () => void
     onNext?: () => void
     onPrevious?: () => void
+    onJumpTo?: (item: MediaItem) => void
     hasNext?: boolean
     hasPrevious?: boolean
+    autoPlay?: boolean
 }
 
 const getFileUrl = (filepath: string) => {
     return `media:///${filepath.replace(/\\/g, '/')}`;
 }
 
-export function MediaViewer({ item, onClose, onNext, onPrevious, hasNext, hasPrevious }: MediaViewerProps) {
+export function MediaViewer({ item, items = [], onClose, onNext, onPrevious, onJumpTo, hasNext, hasPrevious, autoPlay = false }: MediaViewerProps) {
     const [tags, setTags] = useState<Tag[]>([]);
     const [itemTags, setItemTags] = useState<Tag[]>(item.tags || []);
     const [newTagName, setNewTagName] = useState('');
     const [isAddingTag, setIsAddingTag] = useState(false);
     const [hasError, setHasError] = useState(false);
+    const [isPlaying, setIsPlaying] = useState(false); // Default to false (no auto-play)
+
+    useEffect(() => {
+        // Auto-maximize (fullscreen) on mount ONLY if in slideshow mode (autoPlay=true)
+        if (autoPlay) {
+            const enterFullscreen = async () => {
+                try {
+                    if (!document.fullscreenElement) {
+                        await document.documentElement.requestFullscreen();
+                    }
+                } catch (err) {
+                    console.warn('Failed to enter fullscreen:', err);
+                }
+            };
+            enterFullscreen();
+        }
+
+        // Exit fullscreen on unmount if we were in fullscreen
+        return () => {
+            if (document.fullscreenElement) {
+                document.exitFullscreen().catch(() => { });
+            }
+        };
+    }, [autoPlay]);
+
+    useEffect(() => {
+        let interval: NodeJS.Timeout;
+        if (isPlaying && onNext) {
+            interval = setInterval(() => {
+                onNext();
+            }, 3000); // 3 seconds interval
+        }
+        return () => clearInterval(interval);
+    }, [isPlaying, onNext, item]); // Depend on item to reset timer on change
 
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
@@ -27,11 +64,20 @@ export function MediaViewer({ item, onClose, onNext, onPrevious, hasNext, hasPre
             if (isAddingTag && e.key !== 'Escape') return;
 
             if (e.key === 'Escape') {
+                // If in fullscreen, Escape usually exits fullscreen first. 
+                // If we are in fullscreen, browser handles Escape to exit fullscreen. 
+                // We might need to handle closing the viewer separately or wait for fs change.
+                // But for now, let's keep onClose. If browser catches Escape for fullscreen, this might not fire.
                 onClose();
             } else if (e.key === 'ArrowRight' && onNext && hasNext) {
                 onNext();
+                setIsPlaying(false); // Stop auto-play on manual navigation
             } else if (e.key === 'ArrowLeft' && onPrevious && hasPrevious) {
                 onPrevious();
+                setIsPlaying(false);
+            } else if (e.key === ' ') { // Space bar to toggle play/pause
+                e.preventDefault();
+                setIsPlaying(prev => !prev);
             }
         };
 
@@ -174,46 +220,142 @@ export function MediaViewer({ item, onClose, onNext, onPrevious, hasNext, hasPre
                     </button>
                 )}
 
-
-                <div className="media-tags-overlay">
-                    <div className="tags-list">
-                        {itemTags.map(tag => (
-                            <span key={tag.id} className="media-tag">
-                                #{tag.name}
-                                <button
-                                    className="remove-tag-btn"
-                                    onClick={(e) => {
-                                        e.stopPropagation();
-                                        handleRemoveTag(tag.id);
-                                    }}
-                                >×</button>
-                            </span>
-                        ))}
-                        {isAddingTag ? (
-                            <div className="add-tag-input-container">
-                                <input
-                                    type="text"
-                                    value={newTagName}
-                                    onChange={(e) => setNewTagName(e.target.value)}
-                                    onKeyDown={(e) => {
-                                        if (e.key === 'Enter') handleAddTag();
-                                        if (e.key === 'Escape') setIsAddingTag(false);
-                                        e.stopPropagation(); // Prevent viewer nav
-                                    }}
-                                    placeholder="Tag name"
-                                    autoFocus
-                                    list="existing-tags"
-                                />
-                                <datalist id="existing-tags">
-                                    {tags.map(t => <option key={t.id} value={t.name} />)}
-                                </datalist>
-                                <button onClick={handleAddTag}>Add</button>
-                            </div>
-                        ) : (
-                            <button className="add-tag-btn" onClick={() => setIsAddingTag(true)}>+</button>
-                        )}
+                {!autoPlay && (
+                    <div className="media-tags-overlay">
+                        <div className="tags-list">
+                            {itemTags.map(tag => (
+                                <span key={tag.id} className="media-tag">
+                                    #{tag.name}
+                                    <button
+                                        className="remove-tag-btn"
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            handleRemoveTag(tag.id);
+                                        }}
+                                    >×</button>
+                                </span>
+                            ))}
+                            {isAddingTag ? (
+                                <div className="add-tag-input-container">
+                                    <input
+                                        type="text"
+                                        value={newTagName}
+                                        onChange={(e) => setNewTagName(e.target.value)}
+                                        onKeyDown={(e) => {
+                                            if (e.key === 'Enter') handleAddTag();
+                                            if (e.key === 'Escape') setIsAddingTag(false);
+                                            e.stopPropagation(); // Prevent viewer nav
+                                        }}
+                                        placeholder="Tag name"
+                                        autoFocus
+                                        list="existing-tags"
+                                    />
+                                    <datalist id="existing-tags">
+                                        {tags.map(t => <option key={t.id} value={t.name} />)}
+                                    </datalist>
+                                    <button onClick={handleAddTag}>Add</button>
+                                </div>
+                            ) : (
+                                <button className="add-tag-btn" onClick={() => setIsAddingTag(true)}>+</button>
+                            )}
+                        </div>
                     </div>
-                </div>
+                )}
+            </div>
+
+            {/* Bottom Controls Overlay (Play/Pause + Thumbnails) */}
+            <div
+                className="bottom-controls-container"
+                style={{
+                    position: 'fixed',
+                    bottom: 0,
+                    left: 0,
+                    right: 0,
+                    height: '140px', // Increased height to accommodate button + strip
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    justifyContent: 'flex-end',
+                    zIndex: 2000,
+                    opacity: 0, // Hidden by default
+                    transition: 'opacity 0.3s ease',
+                    background: 'linear-gradient(to top, rgba(0,0,0,0.8), transparent)',
+                    pointerEvents: 'none', // Let clicks pass when hidden
+                    paddingBottom: '20px'
+                }}
+                onMouseEnter={(e) => {
+                    e.currentTarget.style.opacity = '1';
+                    e.currentTarget.style.pointerEvents = 'auto';
+                }}
+                onMouseLeave={(e) => {
+                    e.currentTarget.style.opacity = '0';
+                    e.currentTarget.style.pointerEvents = 'none';
+                }}
+                onClick={(e) => e.stopPropagation()}
+            >
+                {/* Play/Pause Button */}
+                <button
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        setIsPlaying(prev => !prev);
+                    }}
+                    style={{
+                        background: 'rgba(255,255,255,0.2)',
+                        color: 'white',
+                        border: '1px solid rgba(255,255,255,0.4)',
+                        borderRadius: '24px',
+                        padding: '8px 24px',
+                        fontSize: '16px',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px',
+                        marginBottom: '10px',
+                        pointerEvents: 'auto',
+                        backdropFilter: 'blur(4px)'
+                    }}
+                >
+                    {isPlaying ? '⏸ Pause' : '▶ Play'}
+                </button>
+
+                {/* Thumbnail Strip */}
+                {items.length > 0 && (
+                    <div style={{
+                        display: 'flex',
+                        gap: '10px',
+                        overflowX: 'auto',
+                        padding: '0 10px',
+                        maxWidth: '90%',
+                        height: '70px',
+                        scrollbarWidth: 'none',
+                        pointerEvents: 'auto',
+                        alignItems: 'center'
+                    }}>
+                        {items.map((m) => (
+                            <div
+                                key={m.id}
+                                onClick={() => onJumpTo?.(m)}
+                                style={{
+                                    minWidth: '80px',
+                                    height: '60px',
+                                    borderRadius: '4px',
+                                    overflow: 'hidden',
+                                    cursor: 'pointer',
+                                    border: m.id === item.id ? '2px solid var(--primary-color)' : '2px solid transparent',
+                                    opacity: m.id === item.id ? 1 : 0.6,
+                                    transition: 'opacity 0.2s',
+                                    flexShrink: 0
+                                }}
+                            >
+                                {m.type === 'video' ? (
+                                    <video src={getFileUrl(m.filepath)} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                ) : (
+                                    <img src={getFileUrl(m.filepath)} alt={m.filename} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                )}
+                            </div>
+                        ))}
+                    </div>
+                )}
             </div>
         </div>
     )
