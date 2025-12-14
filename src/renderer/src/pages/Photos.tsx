@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react'
 import { useSearchParams } from 'react-router-dom'
-import { MediaItem } from '../types'
+import { MediaItem, Tag } from '../types'
 import { MediaGrid } from '../components/MediaGrid'
 import { CreateFolderModal } from '../components/CreateFolderModal'
 import { MoveToModal } from '../components/MoveToModal'
 import { RenameModal } from '../components/RenameModal'
+import { AddTagModal } from '../components/AddTagModal'
 
 interface PhotosProps {
     media: MediaItem[]
@@ -17,12 +18,17 @@ export function Photos({ media }: PhotosProps) {
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
 
     // Derived current path from URL or fallback to rootPath
-    // We defer using rootPath until it is loaded
     const currentPath = searchParams.get('path') || rootPath
 
     // Modal states
     const [moveItems, setMoveItems] = useState<MediaItem[]>([])
     const [renameItem, setRenameItem] = useState<MediaItem | null>(null)
+    const [isAddTagModalOpen, setIsAddTagModalOpen] = useState(false)
+    const [itemsToTag, setItemsToTag] = useState<MediaItem[]>([])
+    const [clearSelectionCallback, setClearSelectionCallback] = useState<(() => void) | null>(null)
+
+    // Tag state
+    const [existingTags, setExistingTags] = useState<Tag[]>([])
 
     useEffect(() => {
         window.api.getSettings().then((settings: any) => {
@@ -40,7 +46,13 @@ export function Photos({ media }: PhotosProps) {
                 setSearchParams({ path: imagesPath }, { replace: true });
             }
         })
+        loadTags()
     }, [])
+
+    const loadTags = async () => {
+        const tags = await window.api.getTags()
+        setExistingTags(tags)
+    }
 
     const handleCreateFolder = async (name: string) => {
         const separator = currentPath.includes('\\') ? '\\' : '/'
@@ -51,6 +63,12 @@ export function Photos({ media }: PhotosProps) {
             if (!success) {
                 alert('Failed to create directory')
             }
+            // Page will auto-refresh via parent or we need to trigger reload? 
+            // The original code didn't trigger parent reload explicitly.
+            // But media prop comes from parent. The parent (App.tsx) likely polls or listens to changes?
+            // "window.api.onMediaAdded" is in preload.
+            // For now, let's assume parent handles refresh or we might need to rely on that.
+            // (Original code just closed modal)
         } catch (error) {
             console.error(error)
             alert('Error creating directory')
@@ -118,6 +136,38 @@ export function Photos({ media }: PhotosProps) {
         return item.type === 'directory' || item.type === 'image';
     })
 
+    const handleAddTags = (items: MediaItem[], clearSelection: () => void) => {
+        setItemsToTag(items)
+        setClearSelectionCallback(() => clearSelection)
+        setIsAddTagModalOpen(true)
+    }
+
+    const handleConfirmAddTag = async (tagName: string) => {
+        let tag = existingTags.find(t => t.name.toLowerCase() === tagName.toLowerCase())
+        if (!tag) {
+            tag = await window.api.createTag(tagName)
+            if (tag) {
+                setExistingTags(prev => [...prev, tag!])
+            }
+        }
+
+        if (tag) {
+            for (const item of itemsToTag) {
+                // Check if tag already exists on the item
+                const hasTag = item.tags && item.tags.some(t => t.id === tag.id)
+                if (!hasTag) {
+                    await window.api.addTagToMedia(item.id, tag.id)
+                }
+            }
+            if (clearSelectionCallback) {
+                clearSelectionCallback()
+                setClearSelectionCallback(null)
+            }
+            // Trigger refresh via some mechanism?
+            // Since props come from top, we might rely on top refresh.
+        }
+    }
+
     return (
         <div className="page photos-page">
             <header className="page-header">
@@ -159,6 +209,7 @@ export function Photos({ media }: PhotosProps) {
                     newParams.delete('slideshow');
                     setSearchParams(newParams);
                 }}
+                onAddTags={handleAddTags}
                 autoPlay={searchParams.get('slideshow') === 'true'}
             />
 
@@ -182,6 +233,13 @@ export function Photos({ media }: PhotosProps) {
                 onClose={() => setRenameItem(null)}
                 onRename={handleRenameConfirm}
                 currentName={renameItem ? renameItem.filename : ''}
+            />
+
+            <AddTagModal
+                isOpen={isAddTagModalOpen}
+                onClose={() => setIsAddTagModalOpen(false)}
+                onAdd={handleConfirmAddTag}
+                existingTags={existingTags}
             />
         </div>
     )

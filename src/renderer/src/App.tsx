@@ -46,6 +46,12 @@ function App() {
     window.api.onMediaRemoved((_event, path) => {
       setMedia((prev) => prev.filter((m) => m.filepath !== path))
     })
+
+    window.api.onMediaUpdated((_event) => {
+      window.api.getAllMedia().then((items: MediaItem[]) => {
+        setMedia(items)
+      })
+    })
   }, [])
 
   const handleDragOver = (e: React.DragEvent) => {

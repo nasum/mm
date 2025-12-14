@@ -70,10 +70,11 @@ interface MediaGridProps {
     onRename?: (item: MediaItem) => void
     onSlideshow?: (item: MediaItem) => void
     onSlideshowClose?: () => void
+    onAddTags?: (items: MediaItem[], clearSelection: () => void) => void
     autoPlay?: boolean
 }
 
-export function MediaGrid({ media, onNavigate, onMove, onRename, onSlideshow, onSlideshowClose, autoPlay = false }: MediaGridProps) {
+export function MediaGrid({ media, onNavigate, onMove, onRename, onSlideshow, onSlideshowClose, onAddTags, autoPlay = false }: MediaGridProps) {
     const [activeMenuId, setActiveMenuId] = useState<number | null>(null);
     const [selectedItem, setSelectedItem] = useState<MediaItem | null>(null);
     const [dragOverId, setDragOverId] = useState<number | null>(null);
@@ -442,6 +443,20 @@ export function MediaGrid({ media, onNavigate, onMove, onRename, onSlideshow, on
                     </button>
 
                     <div style={{ width: '1px', height: '24px', backgroundColor: '#444', margin: '0 4px' }}></div>
+
+                    {/* NEW: Add Tags Button */}
+                    <button
+                        className="btn btn-primary"
+                        disabled={selectedIds.size === 0}
+                        onClick={() => onAddTags?.(getSelectedItems(), () => {
+                            setSelectedIds(new Set());
+                            setSelectionMode(false);
+                        })}
+                        style={{ backgroundColor: '#17a2b8', borderColor: '#17a2b8' }}
+                    >
+                        Hashtag
+                    </button>
+
 
                     <button
                         className="btn btn-primary"

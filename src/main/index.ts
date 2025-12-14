@@ -339,11 +339,15 @@ app.whenReady().then(async () => {
   });
 
   ipcMain.handle('add-tag-to-media', (_, { mediaId, tagId }: { mediaId: number, tagId: number }) => {
-    return addTagToMedia(mediaId, tagId);
+    const result = addTagToMedia(mediaId, tagId);
+    if (mainWindow) mainWindow.webContents.send('media-updated');
+    return result;
   });
 
   ipcMain.handle('remove-tag-from-media', (_, { mediaId, tagId }: { mediaId: number, tagId: number }) => {
-    return removeTagFromMedia(mediaId, tagId);
+    const result = removeTagFromMedia(mediaId, tagId);
+    if (mainWindow) mainWindow.webContents.send('media-updated');
+    return result;
   });
 
 

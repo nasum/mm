@@ -11,6 +11,7 @@ declare global {
       selectDirectory: () => Promise<string | null>
       onMediaAdded: (callback: (event: any, data: any) => void) => void
       onMediaRemoved: (callback: (event: any, path: string) => void) => void
+      onMediaUpdated: (callback: (event: any) => void) => void
       deleteMedia: (filepath: string) => Promise<boolean>
       addDroppedFiles: (paths: string[]) => Promise<boolean[]>
       onImportProgress: (callback: (event: any, data: { status: string, filename: string, error?: string }) => void) => void

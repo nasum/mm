@@ -12,6 +12,8 @@ const api = {
     ipcRenderer.on('media-added', callback),
   onMediaRemoved: (callback: (event: IpcRendererEvent, ...args: any[]) => void) => 
     ipcRenderer.on('media-removed', callback),
+  onMediaUpdated: (callback: (event: IpcRendererEvent, ...args: any[]) => void) => 
+    ipcRenderer.on('media-updated', callback),
   deleteMedia: (filepath: string) => ipcRenderer.invoke('delete-media', filepath),
   addDroppedFiles: (paths: string[]) => ipcRenderer.invoke('add-dropped-files', paths),
   onImportProgress: (callback: (event: IpcRendererEvent, data: { status: string, filename: string, error?: string }) => void) =>

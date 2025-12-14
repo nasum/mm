@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react'
 import { useSearchParams } from 'react-router-dom'
-import { MediaItem } from '../types'
+import { MediaItem, Tag } from '../types'
 import { MediaGrid } from '../components/MediaGrid'
 import { CreateFolderModal } from '../components/CreateFolderModal'
 import { MoveToModal } from '../components/MoveToModal'
 import { RenameModal } from '../components/RenameModal'
+import { AddTagModal } from '../components/AddTagModal'
 
 interface VideosProps {
     media: MediaItem[]
@@ -22,6 +23,12 @@ export function Videos({ media }: VideosProps) {
     // Modal states
     const [moveItems, setMoveItems] = useState<MediaItem[]>([])
     const [renameItem, setRenameItem] = useState<MediaItem | null>(null)
+    const [isAddTagModalOpen, setIsAddTagModalOpen] = useState(false)
+    const [itemsToTag, setItemsToTag] = useState<MediaItem[]>([])
+    const [clearSelectionCallback, setClearSelectionCallback] = useState<(() => void) | null>(null)
+
+    // Tag state
+    const [existingTags, setExistingTags] = useState<Tag[]>([])
 
     useEffect(() => {
         window.api.getSettings().then((settings: any) => {
@@ -39,7 +46,13 @@ export function Videos({ media }: VideosProps) {
                 setSearchParams({ path: moviesPath }, { replace: true });
             }
         })
+        loadTags()
     }, [])
+
+    const loadTags = async () => {
+        const tags = await window.api.getTags()
+        setExistingTags(tags)
+    }
 
     const handleCreateFolder = async (name: string) => {
         const separator = currentPath.includes('\\') ? '\\' : '/'
@@ -116,6 +129,36 @@ export function Videos({ media }: VideosProps) {
         return item.type === 'directory' || item.type === 'video';
     })
 
+    const handleAddTags = (items: MediaItem[], clearSelection: () => void) => {
+        setItemsToTag(items)
+        setClearSelectionCallback(() => clearSelection)
+        setIsAddTagModalOpen(true)
+    }
+
+    const handleConfirmAddTag = async (tagName: string) => {
+        let tag = existingTags.find(t => t.name.toLowerCase() === tagName.toLowerCase())
+        if (!tag) {
+            tag = await window.api.createTag(tagName)
+            if (tag) {
+                setExistingTags(prev => [...prev, tag!])
+            }
+        }
+
+        if (tag) {
+            for (const item of itemsToTag) {
+                // Check if tag already exists on the item
+                const hasTag = item.tags && item.tags.some(t => t.id === tag.id)
+                if (!hasTag) {
+                    await window.api.addTagToMedia(item.id, tag.id)
+                }
+            }
+            if (clearSelectionCallback) {
+                clearSelectionCallback()
+                setClearSelectionCallback(null)
+            }
+        }
+    }
+
     return (
         <div className="page videos-page">
             <header className="page-header">
@@ -155,6 +198,7 @@ export function Videos({ media }: VideosProps) {
                     newParams.delete('slideshow');
                     setSearchParams(newParams);
                 }}
+                onAddTags={handleAddTags}
                 autoPlay={searchParams.get('slideshow') === 'true'}
             />
 
@@ -178,6 +222,13 @@ export function Videos({ media }: VideosProps) {
                 onClose={() => setRenameItem(null)}
                 onRename={handleRenameConfirm}
                 currentName={renameItem ? renameItem.filename : ''}
+            />
+
+            <AddTagModal
+                isOpen={isAddTagModalOpen}
+                onClose={() => setIsAddTagModalOpen(false)}
+                onAdd={handleConfirmAddTag}
+                existingTags={existingTags}
             />
         </div>
     )
