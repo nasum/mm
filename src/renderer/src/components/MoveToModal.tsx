@@ -5,33 +5,43 @@ interface MoveToModalProps {
     isOpen: boolean
     onClose: () => void
     onConfirm: (targetPath: string) => void
-    item: MediaItem | null
+    items: MediaItem[]
     allMedia: MediaItem[]
     rootPath?: string
 }
 
-export function MoveToModal({ isOpen, onClose, onConfirm, item, allMedia, rootPath }: MoveToModalProps) {
+export function MoveToModal({ isOpen, onClose, onConfirm, items, allMedia, rootPath }: MoveToModalProps) {
     const [currentPath, setCurrentPath] = useState<string>('')
     const [libraryPath, setLibraryPath] = useState<string>('')
     const [effectiveRoot, setEffectiveRoot] = useState<string>('')
 
     useEffect(() => {
-        if (isOpen && item) {
+        if (isOpen && items.length > 0) {
             window.api.getSettings().then((settings: any) => {
                 const libPath = settings.libraryPath || '';
                 setLibraryPath(libPath);
 
-                // If rootPath provided (e.g. .../images), use it as the base constraint
-                // Otherwise fallback to library path
                 const base = rootPath || libPath;
                 setEffectiveRoot(base);
-                setCurrentPath(base);
-                console.log('MoveToModal - Root:', base);
+
+                // If single item, start at its parent. If multiple, start at root (safer/simpler)
+                if (items.length === 1) {
+                    const sep = items[0].filepath.includes('\\') ? '\\' : '/';
+                    const parent = items[0].filepath.substring(0, items[0].filepath.lastIndexOf(sep));
+                    // Ensure parent is within effective root
+                    if (parent.startsWith(base)) {
+                        setCurrentPath(parent);
+                    } else {
+                        setCurrentPath(base);
+                    }
+                } else {
+                    setCurrentPath(base);
+                }
             })
         }
-    }, [isOpen, item, rootPath])
+    }, [isOpen, items, rootPath])
 
-    if (!isOpen || !item) return null
+    if (!isOpen || items.length === 0) return null
 
 
     const getParentPath = (path: string) => {
@@ -56,12 +66,26 @@ export function MoveToModal({ isOpen, onClose, onConfirm, item, allMedia, rootPa
 
     // Don't allow moving into itself if it's a directory
     // Don't allow moving into same folder it's already in
-    const isSameFolder = getParentPath(item.filepath) === currentPath
+    // For multiple items, if ANY item is basically "no-op" or invalid, we should probably allow it but just warn or filter?
+    // Let's simplified: If we are in the same folder as ALL items, disable.
+    // Actually, checking against one item is usually enough for the UI button "Current Location".
+    // If we move 3 items to Folder A, and they are already in Folder A, it's a no-op.
+
+    const isSameFolder = items.every(item => getParentPath(item.filepath) === currentPath);
+
+    // Check if we are trying to move a directory INTO itself or its children
+    // If any item is a directory AND currentPath starts with item.filepath, that's invalid.
+    const isInvalidMove = items.some(item => {
+        if (item.type === 'directory') {
+            return currentPath === item.filepath || currentPath.startsWith(item.filepath + (item.filepath.includes('\\') ? '\\' : '/'));
+        }
+        return false;
+    });
 
     return (
         <div className="modal-overlay">
             <div className="modal-content" style={{ minWidth: '400px', maxHeight: '80vh', display: 'flex', flexDirection: 'column' }}>
-                <h3>Move "{item.filename}" to...</h3>
+                <h3>Move {items.length} item{items.length > 1 ? 's' : ''} to...</h3>
 
                 <div className="path-display" style={{ marginBottom: '10px', padding: '5px', background: '#222', borderRadius: '4px' }}>
                     {currentPath.replace(libraryPath, '~') || '/'}
@@ -102,7 +126,7 @@ export function MoveToModal({ isOpen, onClose, onConfirm, item, allMedia, rootPa
                     <button
                         onClick={() => onConfirm(currentPath)}
                         className="btn btn-primary"
-                        disabled={isSameFolder}
+                        disabled={isSameFolder || isInvalidMove}
                     >
                         {isSameFolder ? 'Current Location' : 'Move Here'}
                     </button>

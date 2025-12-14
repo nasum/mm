@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom'
-import { MediaItem } from '../types'
+
 
 export function Home() {
     const navigate = useNavigate()

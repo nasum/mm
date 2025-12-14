@@ -15,7 +15,7 @@ export function TagResults({ media }: TagResultsProps) {
     const tagId = new URLSearchParams(location.search).get('tag')
 
     // Modal states
-    const [moveItem, setMoveItem] = useState<MediaItem | null>(null)
+    const [moveItems, setMoveItems] = useState<MediaItem[]>([])
     const [renameItem, setRenameItem] = useState<MediaItem | null>(null)
     const [rootPath, setRootPath] = useState<string>('')
 
@@ -54,18 +54,20 @@ export function TagResults({ media }: TagResultsProps) {
     }, [filteredMedia, tagId])
 
     const handleMoveConfirm = async (targetPath: string) => {
-        if (!moveItem) return
+        if (moveItems.length === 0) return
 
         const separator = targetPath.includes('\\') ? '\\' : '/'
-        const newPath = `${targetPath}${separator}${moveItem.filename}`
 
         try {
-            await window.api.renameMedia(moveItem.filepath, newPath)
+            for (const item of moveItems) {
+                const newPath = `${targetPath}${separator}${item.filename}`
+                await window.api.renameMedia(item.filepath, newPath)
+            }
         } catch (error) {
             console.error('Move failed', error)
-            alert('Failed to move item')
+            alert('Failed to move some items')
         }
-        setMoveItem(null)
+        setMoveItems([])
     }
 
     const handleRenameConfirm = async (newName: string) => {
@@ -92,15 +94,15 @@ export function TagResults({ media }: TagResultsProps) {
             </header>
             <MediaGrid
                 media={filteredMedia}
-                onMove={(item) => setMoveItem(item)}
+                onMove={(items) => setMoveItems(items)}
                 onRename={(item) => setRenameItem(item)}
             />
 
             <MoveToModal
-                isOpen={!!moveItem}
-                onClose={() => setMoveItem(null)}
+                isOpen={moveItems.length > 0}
+                onClose={() => setMoveItems([])}
                 onConfirm={handleMoveConfirm}
-                item={moveItem}
+                items={moveItems}
                 allMedia={media}
                 rootPath={rootPath}
             />

@@ -17,7 +17,7 @@ export function Photos({ media }: PhotosProps) {
 
 
     // Modal states
-    const [moveItem, setMoveItem] = useState<MediaItem | null>(null)
+    const [moveItems, setMoveItems] = useState<MediaItem[]>([])
     const [renameItem, setRenameItem] = useState<MediaItem | null>(null)
 
     useEffect(() => {
@@ -54,20 +54,21 @@ export function Photos({ media }: PhotosProps) {
     }
 
     const handleMoveConfirm = async (targetPath: string) => {
-        if (!moveItem) return
+        if (moveItems.length === 0) return
 
         const separator = targetPath.includes('\\') ? '\\' : '/'
-        const newPath = `${targetPath}${separator}${moveItem.filename}`
-
-        console.log('Move confirmed:', moveItem.filepath, '->', newPath);
 
         try {
-            await window.api.renameMedia(moveItem.filepath, newPath)
+            for (const item of moveItems) {
+                const newPath = `${targetPath}${separator}${item.filename}`
+                console.log('Move confirmed:', item.filepath, '->', newPath);
+                await window.api.renameMedia(item.filepath, newPath)
+            }
         } catch (error) {
             console.error('Move failed', error)
-            alert('Failed to move item')
+            alert('Failed to move some items')
         }
-        setMoveItem(null)
+        setMoveItems([])
     }
 
     const handleRenameConfirm = async (newName: string) => {
@@ -129,8 +130,8 @@ export function Photos({ media }: PhotosProps) {
             <MediaGrid
                 media={currentItems}
                 onNavigate={(path) => setCurrentPath(path)}
-                onMove={(item) => {
-                    setMoveItem(item);
+                onMove={(items) => {
+                    setMoveItems(items);
                 }}
                 onRename={(item) => setRenameItem(item)}
             />
@@ -142,10 +143,10 @@ export function Photos({ media }: PhotosProps) {
             />
 
             <MoveToModal
-                isOpen={!!moveItem}
-                onClose={() => setMoveItem(null)}
+                isOpen={moveItems.length > 0}
+                onClose={() => setMoveItems([])}
                 onConfirm={handleMoveConfirm}
-                item={moveItem}
+                items={moveItems}
                 allMedia={media}
                 rootPath={rootPath}
             />
