@@ -1,6 +1,7 @@
 import { MediaItem } from '../types'
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, forwardRef } from 'react'
 import { MediaViewer } from './MediaViewer'
+import { VirtuosoGrid } from 'react-virtuoso'
 
 interface MediaGridProps {
     media: MediaItem[]
@@ -12,8 +13,34 @@ interface MediaGridProps {
 const getFileUrl = (filepath: string) => {
     // Use custom protocol to bypass security restrictions
     // Add extra slash to ensure it's treated as absolute path with empty host
-    return `media:///${filepath.replace(/\\/g, '/')}`;
+    // Encode each segment to handle special characters (e.g. Japanese, spaces)
+    const normalized = filepath.replace(/\\/g, '/');
+    return `media:///${normalized.split('/').map(encodeURIComponent).join('/')}`;
 }
+
+const GridList = forwardRef<HTMLDivElement, React.ComponentPropsWithoutRef<'div'>>(({ style, children, ...props }, ref) => (
+    <div
+        ref={ref}
+        {...props}
+        style={{
+            ...style,
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))',
+            gap: '20px',
+            padding: '20px 40px',
+            alignContent: 'start',
+            boxSizing: 'border-box'
+        }}
+    >
+        {children}
+    </div>
+));
+
+const GridItemContainer = ({ children, ...props }: React.ComponentPropsWithoutRef<'div'>) => (
+    <div {...props} style={{ ...props.style, minWidth: 0 }}>
+        {children}
+    </div>
+);
 
 export function MediaGrid({ media, onNavigate, onMove, onRename }: MediaGridProps) {
     const [activeMenuId, setActiveMenuId] = useState<number | null>(null);
@@ -181,129 +208,139 @@ export function MediaGrid({ media, onNavigate, onMove, onRename }: MediaGridProp
     };
 
     return (
-        <div className="media-grid">
-            {sortedMedia.map((item) => {
-                const isSelected = selectedIds.has(item.id);
-                return (
-                    <div
-                        key={item.id}
-                        className={`media-item ${isSelected ? 'selected' : ''} ${selectionMode ? 'selection-mode' : ''}`}
-                        draggable={!selectionMode}
-                        onDragStart={(e) => handleDragStart(e, item)}
-                        onDragEnd={handleDragEnd}
-                        onDragOver={(e) => handleDragOver(e, item)}
-                        onDrop={(e) => handleDrop(e, item)}
-                        onMouseDown={() => startLongPress(item)}
-                        onMouseUp={clearLongPress}
-                        onMouseLeave={clearLongPress}
-                        onClick={(e) => handleItemClick(e, item)}
-                        style={{
-                            outline: dragOverId === item.id ? '2px solid var(--primary-color)' : (isSelected ? '2px solid var(--primary-color)' : 'none'),
-                            outlineOffset: '2px',
-                            cursor: 'pointer'
-                        }}
-                    >
-                        <div className="media-preview group">
-                            {selectionMode && (
-                                <div className={`selection-checkbox ${isSelected ? 'checked' : ''}`} style={{
-                                    position: 'absolute',
-                                    top: '8px',
-                                    right: '8px',
-                                    width: '20px',
-                                    height: '20px',
-                                    borderRadius: '50%',
-                                    border: '2px solid white',
-                                    backgroundColor: isSelected ? 'var(--primary-color)' : 'rgba(0,0,0,0.3)',
-                                    zIndex: 10,
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center'
-                                }}>
-                                    {isSelected && <span style={{ color: 'white', fontSize: '12px' }}>✓</span>}
-                                </div>
-                            )}
+        <div style={{ flex: 1, height: '100%', overflow: 'hidden', position: 'relative', display: 'flex', flexDirection: 'column' }}>
+            <VirtuosoGrid
+                style={{ flex: 1 }}
+                totalCount={sortedMedia.length}
+                components={{
+                    List: GridList,
+                    Item: GridItemContainer // Optional, but can use standard div if needed
+                }}
+                itemContent={(index) => {
+                    const item = sortedMedia[index];
+                    const isSelected = selectedIds.has(item.id);
+                    return (
+                        <div
+                            key={item.id}
+                            className={`media-item ${isSelected ? 'selected' : ''} ${selectionMode ? 'selection-mode' : ''}`}
+                            draggable={!selectionMode}
+                            onDragStart={(e) => handleDragStart(e, item)}
+                            onDragEnd={handleDragEnd}
+                            onDragOver={(e) => handleDragOver(e, item)}
+                            onDrop={(e) => handleDrop(e, item)}
+                            onMouseDown={() => startLongPress(item)}
+                            onMouseUp={clearLongPress}
+                            onMouseLeave={clearLongPress}
+                            onClick={(e) => handleItemClick(e, item)}
+                            style={{
+                                outline: dragOverId === item.id ? '2px solid var(--primary-color)' : (isSelected ? '2px solid var(--primary-color)' : 'none'),
+                                outlineOffset: '2px',
+                                cursor: 'pointer',
+                                height: 'auto'
+                            }}
+                        >
+                            <div className="media-preview group">
+                                {selectionMode && (
+                                    <div className={`selection-checkbox ${isSelected ? 'checked' : ''}`} style={{
+                                        position: 'absolute',
+                                        top: '8px',
+                                        right: '8px',
+                                        width: '20px',
+                                        height: '20px',
+                                        borderRadius: '50%',
+                                        border: '2px solid white',
+                                        backgroundColor: isSelected ? 'var(--primary-color)' : 'rgba(0,0,0,0.3)',
+                                        zIndex: 10,
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center'
+                                    }}>
+                                        {isSelected && <span style={{ color: 'white', fontSize: '12px' }}>✓</span>}
+                                    </div>
+                                )}
 
-                            {item.type === 'directory' ? (
-                                <div className="folder-icon" style={{ fontSize: '4rem', display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%' }}>📁</div>
-                            ) : item.type === 'image' ? (
-                                <img src={getFileUrl(item.filepath)} alt={item.filename} />
-                            ) : (
-                                <video src={getFileUrl(item.filepath)} controls muted />
-                            )}
-                        </div>
-                        <div className="media-info media-info-row">
-                            <span className="media-name" title={item.filename}>{item.filename}</span>
-                            {!selectionMode && (
-                                <div className="menu-container">
-                                    <button
-                                        className="menu-btn"
-                                        onClick={(e) => {
-                                            e.preventDefault();
-                                            e.stopPropagation();
-                                            e.nativeEvent.stopImmediatePropagation(); // Prevent click logic?
-                                            clearLongPress();
-                                            setActiveMenuId(activeMenuId === item.id ? null : item.id);
-                                        }}
-                                        onMouseDown={(e) => e.stopPropagation()} // Prevent long press on menu
-                                    >
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                            <circle cx="12" cy="12" r="1"></circle>
-                                            <circle cx="19" cy="12" r="1"></circle>
-                                            <circle cx="5" cy="12" r="1"></circle>
-                                        </svg>
-                                    </button>
+                                {item.type === 'directory' ? (
+                                    <div className="folder-icon" style={{ fontSize: '4rem', display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%' }}>📁</div>
+                                ) : item.type === 'image' ? (
+                                    <img src={getFileUrl(item.filepath)} alt={item.filename} />
+                                ) : (
+                                    <video src={getFileUrl(item.filepath)} controls muted />
+                                )}
+                            </div>
+                            <div className="media-info media-info-row">
+                                <span className="media-name" title={item.filename}>{item.filename}</span>
+                                {!selectionMode && (
+                                    <div className="menu-container">
+                                        <button
+                                            className="menu-btn"
+                                            onClick={(e) => {
+                                                e.preventDefault();
+                                                e.stopPropagation();
+                                                e.nativeEvent.stopImmediatePropagation(); // Prevent click logic?
+                                                clearLongPress();
+                                                setActiveMenuId(activeMenuId === item.id ? null : item.id);
+                                            }}
+                                            onMouseDown={(e) => e.stopPropagation()} // Prevent long press on menu
+                                        >
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                                <circle cx="12" cy="12" r="1"></circle>
+                                                <circle cx="19" cy="12" r="1"></circle>
+                                                <circle cx="5" cy="12" r="1"></circle>
+                                            </svg>
+                                        </button>
 
-                                    {activeMenuId === item.id && (
-                                        <div ref={menuRef} className="dropdown-menu">
-                                            <button
-                                                className="dropdown-item"
-                                                onClick={(e) => {
-                                                    e.stopPropagation();
-                                                    window.api.showInFolder(item.filepath);
-                                                    setActiveMenuId(null);
-                                                }}
-                                            >
-                                                Show in Explorer
-                                            </button>
-                                            <button
-                                                className="dropdown-item"
-                                                onClick={(e) => {
-                                                    e.stopPropagation();
-                                                    setActiveMenuId(null);
-                                                    onMove?.([item]); // Pass array
-                                                }}
-                                            >
-                                                Move to...
-                                            </button>
-                                            <button
-                                                className="dropdown-item"
-                                                onClick={(e) => {
-                                                    e.stopPropagation();
-                                                    setActiveMenuId(null);
-                                                    if (onRename) {
-                                                        onRename(item);
-                                                    }
-                                                }}
-                                            >
-                                                Rename
-                                            </button>
-                                            <button
-                                                className="dropdown-item delete-option"
-                                                onClick={(e) => {
-                                                    e.stopPropagation();
-                                                    handleDelete([item]); // Pass array
-                                                }}
-                                            >
-                                                Delete
-                                            </button>
-                                        </div>
-                                    )}
-                                </div>
-                            )}
+                                        {activeMenuId === item.id && (
+                                            <div ref={menuRef} className="dropdown-menu">
+                                                <button
+                                                    className="dropdown-item"
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        window.api.showInFolder(item.filepath);
+                                                        setActiveMenuId(null);
+                                                    }}
+                                                >
+                                                    Show in Explorer
+                                                </button>
+                                                <button
+                                                    className="dropdown-item"
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        setActiveMenuId(null);
+                                                        onMove?.([item]); // Pass array
+                                                    }}
+                                                >
+                                                    Move to...
+                                                </button>
+                                                <button
+                                                    className="dropdown-item"
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        setActiveMenuId(null);
+                                                        if (onRename) {
+                                                            onRename(item);
+                                                        }
+                                                    }}
+                                                >
+                                                    Rename
+                                                </button>
+                                                <button
+                                                    className="dropdown-item delete-option"
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        handleDelete([item]); // Pass array
+                                                    }}
+                                                >
+                                                    Delete
+                                                </button>
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
+                            </div>
                         </div>
-                    </div>
-                );
-            })}
+                    );
+                }}
+            />
 
             {/* Bulk Action Bar */}
             {selectionMode && (
