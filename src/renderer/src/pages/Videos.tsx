@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { MediaItem } from '../App'
+import { MediaItem } from '../types'
 import { MediaGrid } from '../components/MediaGrid'
 import { CreateFolderModal } from '../components/CreateFolderModal'
 import { MoveToModal } from '../components/MoveToModal'

@@ -13,6 +13,7 @@ declare global {
       onMediaRemoved: (callback: (event: any, path: string) => void) => void
       deleteMedia: (filepath: string) => Promise<boolean>
       addDroppedFiles: (paths: string[]) => Promise<boolean[]>
+      onImportProgress: (callback: (event: any, data: { status: string, filename: string, error?: string }) => void) => void
       showInFolder: (path: string) => Promise<void>
       createDirectory: (path: string) => Promise<boolean>
       renameMedia: (oldPath: string, newPath: string) => Promise<boolean>

@@ -8,23 +8,11 @@ import { Videos } from './pages/Videos'
 import { Settings } from './pages/Settings'
 import { TagResults } from './pages/TagResults'
 import { TagList } from './pages/TagList'
+import { ImportProgress } from './components/ImportProgress'
 
-export interface Tag {
-  id: number
-  name: string
-  count?: number
-  last_attached?: string
-}
+import { MediaItem } from './types'
 
-export interface MediaItem {
-  id: number
-  filepath: string
-  filename: string
-  type: 'image' | 'video' | 'directory'
-  size: number
-  created_at: string
-  tags: Tag[]
-}
+// Removed Tag and MediaItem interfaces as they are now in types.ts
 
 function App() {
   const [media, setMedia] = useState<MediaItem[]>([])
@@ -115,7 +103,7 @@ function App() {
         />
         <main className="main-content">
           <Routes>
-            <Route path="/" element={<Home media={media} />} />
+            <Route path="/" element={<Home />} />
             <Route path="/photos" element={<Photos media={media} />} />
             <Route path="/videos" element={<Videos media={media} />} />
             <Route path="/tags" element={<TagResults media={media} />} />
@@ -123,6 +111,7 @@ function App() {
             <Route path="/settings" element={<Settings />} />
           </Routes>
         </main>
+        <ImportProgress />
       </div>
     </Router>
   )

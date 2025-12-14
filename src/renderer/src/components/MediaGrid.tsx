@@ -1,4 +1,4 @@
-import { MediaItem } from '../App'
+import { MediaItem } from '../types'
 import { useState, useEffect, useRef } from 'react'
 import { MediaViewer } from './MediaViewer'
 
@@ -56,22 +56,6 @@ export function MediaGrid({ media, onNavigate, onMove, onRename }: MediaGridProp
         setActiveMenuId(null);
     };
 
-    const handleRename = async (item: MediaItem) => {
-        const newName = prompt('Enter new name:', item.filename);
-        if (newName && newName !== item.filename) {
-            const separator = item.filepath.includes('\\') ? '\\' : '/';
-            const parentDir = item.filepath.lastIndexOf(separator) !== -1
-                ? item.filepath.substring(0, item.filepath.lastIndexOf(separator))
-                : '';
-
-            if (parentDir) {
-                const newPath = `${parentDir}${separator}${newName}`;
-                await window.api.renameMedia(item.filepath, newPath);
-            }
-        }
-        setActiveMenuId(null);
-    };
-
     const handleDragStart = (e: React.DragEvent, item: MediaItem) => {
         e.dataTransfer.setData('application/json', JSON.stringify({
             filepath: item.filepath,
@@ -88,14 +72,6 @@ export function MediaGrid({ media, onNavigate, onMove, onRename }: MediaGridProp
                 setDragOverId(item.id);
             }
         }
-    };
-
-    const handleDragLeave = (e: React.DragEvent) => {
-        // Prevent flickering by ensuring we're leaving the actual drop target
-        // For simplicity, we might just rely on checking dragOverId state updates carefully,
-        // but here we can reset if needed or just let DragOver update it.
-        // A simple way is to not reset it here but maybe reset it on drop or end.
-        // Or check relatedTarget.
     };
 
     // Use onDragEnd to cleanup state if drag is cancelled or completes

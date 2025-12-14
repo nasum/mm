@@ -14,6 +14,8 @@ const api = {
     ipcRenderer.on('media-removed', callback),
   deleteMedia: (filepath: string) => ipcRenderer.invoke('delete-media', filepath),
   addDroppedFiles: (paths: string[]) => ipcRenderer.invoke('add-dropped-files', paths),
+  onImportProgress: (callback: (event: IpcRendererEvent, data: { status: string, filename: string, error?: string }) => void) =>
+      ipcRenderer.on('import-progress', callback),
   showInFolder: (path: string) => ipcRenderer.invoke('show-item-in-folder', path),
   createDirectory: (path: string) => ipcRenderer.invoke('create-directory', path),
   renameMedia: (oldPath: string, newPath: string) => ipcRenderer.invoke('rename-media', { oldPath, newPath }),

@@ -1,6 +1,6 @@
 import { useEffect, useState, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Tag } from '../App'
+import { Tag } from '../types'
 
 export function TagList() {
     const [tags, setTags] = useState<Tag[]>([])

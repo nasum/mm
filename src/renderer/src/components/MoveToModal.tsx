@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { MediaItem } from '../App'
+import { MediaItem } from '../types'
 
 interface MoveToModalProps {
     isOpen: boolean

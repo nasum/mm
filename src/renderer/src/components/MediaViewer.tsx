@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { MediaItem, Tag } from '../App'
+import { MediaItem, Tag } from '../types'
 
 interface MediaViewerProps {
     item: MediaItem

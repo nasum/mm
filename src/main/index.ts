@@ -231,30 +231,75 @@ app.whenReady().then(async () => {
       const imageExts = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp'];
       const videoExts = ['.mp4', '.mov', '.webm', '.mkv', '.avi'];
 
-      for (const filepath of filePaths) {
-        const ext = path.extname(filepath).toLowerCase();
-        let subDir = '';
-        
-        if (imageExts.includes(ext)) {
-          subDir = 'images';
-        } else if (videoExts.includes(ext)) {
-          subDir = 'movies';
-        }
+      const processRecursive = async (sourcePath: string, relativeTargetDir: string): Promise<boolean> => {
+        try {
+          const stats = await fs.stat(sourcePath);
+          if (stats.isDirectory()) {
+            const currentDirName = path.basename(sourcePath);
+            const nextRelative = path.join(relativeTargetDir, currentDirName);
+            const children = await fs.readdir(sourcePath);
+            for (const child of children) {
+              await processRecursive(path.join(sourcePath, child), nextRelative);
+            }
+            return true;
+          } else {
+            const ext = path.extname(sourcePath).toLowerCase();
+            let subDir = '';
+            if (imageExts.includes(ext)) subDir = 'images';
+            else if (videoExts.includes(ext)) subDir = 'movies';
 
-        if (subDir) {
-          const filename = path.basename(filepath);
-          const destDir = path.join(libraryPath, subDir);
-          await fs.ensureDir(destDir);
-          const dest = path.join(destDir, filename);
-          await fs.copy(filepath, dest);
-          results.push(true);
-        } else {
-          results.push(false);
+            if (subDir) {
+              const filename = path.basename(sourcePath);
+              
+              if (mainWindow) {
+                mainWindow.webContents.send('import-progress', {
+                  status: 'processing',
+                  filename: filename
+                });
+              }
+
+              const destDir = path.join(libraryPath, subDir, relativeTargetDir);
+              await fs.ensureDir(destDir);
+              const dest = path.join(destDir, filename);
+              await fs.copy(sourcePath, dest);
+              return true;
+            }
+            return false;
+          }
+        } catch (error) {
+           console.error('Error processing item:', error);
+           if (mainWindow) {
+             mainWindow.webContents.send('import-progress', {
+               status: 'error',
+               filename: path.basename(sourcePath),
+               error: String(error)
+             });
+           }
+           return false;
         }
+      };
+
+      const processEntry = async (entryPath: string) => {
+        const stats = await fs.stat(entryPath);
+        if (stats.isDirectory()) {
+          const dirName = path.basename(entryPath);
+          const children = await fs.readdir(entryPath);
+          for (const child of children) {
+            await processRecursive(path.join(entryPath, child), dirName);
+          }
+          return true;
+        } else {
+          return await processRecursive(entryPath, '');
+        }
+      }
+
+      for (const filepath of filePaths) {
+         results.push(await processEntry(filepath));
       }
       return results;
     } catch (error) {
       console.error('Failed to add dropped files:', error);
+      // Return false for all if catastrophic failure
       return filePaths.map(() => false);
     }
   });

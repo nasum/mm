@@ -1,5 +1,5 @@
 import { useLocation } from 'react-router-dom'
-import { MediaItem } from '../App'
+import { MediaItem } from '../types'
 import { MediaGrid } from '../components/MediaGrid'
 import { useMemo } from 'react'
 import { MoveToModal } from '../components/MoveToModal'
