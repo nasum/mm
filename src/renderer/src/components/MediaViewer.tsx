@@ -14,7 +14,11 @@ interface MediaViewerProps {
 }
 
 const getFileUrl = (filepath: string) => {
-    return `media:///${filepath.replace(/\\/g, '/')}`;
+    // Use custom protocol to bypass security restrictions
+    // Add extra slash to ensure it's treated as absolute path with empty host
+    // Encode each segment to handle special characters (e.g. Japanese, spaces)
+    const normalized = filepath.replace(/\\/g, '/');
+    return `media:///${normalized.split('/').map(encodeURIComponent).join('/')}`;
 }
 
 export function MediaViewer({ item, items = [], onClose, onNext, onPrevious, onJumpTo, hasNext, hasPrevious, autoPlay = false }: MediaViewerProps) {

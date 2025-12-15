@@ -140,6 +140,26 @@ export function MediaGrid({ media, onNavigate, onMove, onRename, onSlideshow, on
         };
     }, []);
 
+    // Handle browser back button when MediaViewer is open
+    useEffect(() => {
+        if (selectedItem) {
+            // Push a dummy state so we can detect back button
+            window.history.pushState({ mediaViewerOpen: true }, '');
+
+            const handlePopState = () => {
+                // When back button is pressed and viewer is open, close viewer instead of navigating
+                setSelectedItem(null);
+                onSlideshowClose?.();
+            };
+
+            window.addEventListener('popstate', handlePopState);
+
+            return () => {
+                window.removeEventListener('popstate', handlePopState);
+            };
+        }
+    }, [selectedItem, onSlideshowClose]);
+
     if (media.length === 0) {
         return (
             <div className="empty-state">
