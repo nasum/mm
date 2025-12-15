@@ -337,6 +337,37 @@ export function MediaGrid({ media, onNavigate, onMove, onRename, onSlideshow, on
                                     </div>
                                 )}
 
+                                {/* Favorite Star Icon */}
+                                {!selectionMode && item.type !== 'directory' && (
+                                    <button
+                                        className={`favorite-btn ${item.favorite ? 'is-favorited' : ''}`}
+                                        onClick={(e) => {
+                                            e.preventDefault();
+                                            e.stopPropagation();
+                                            window.api.toggleFavorite(item.id);
+                                        }}
+                                        style={{
+                                            position: 'absolute',
+                                            top: '8px',
+                                            left: '8px',
+                                            width: '28px',
+                                            height: '28px',
+                                            borderRadius: '50%',
+                                            border: 'none',
+                                            backgroundColor: 'rgba(0,0,0,0.5)',
+                                            color: item.favorite ? '#ffd700' : 'white',
+                                            fontSize: '16px',
+                                            cursor: 'pointer',
+                                            zIndex: 10,
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center'
+                                        }}
+                                    >
+                                        {item.favorite ? '★' : '☆'}
+                                    </button>
+                                )}
+
                                 <Thumbnail item={item} isSelected={isSelected} />
                             </div>
                             <div className="media-info media-info-row">

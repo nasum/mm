@@ -13,4 +13,5 @@ export interface MediaItem {
   size: number
   created_at: string
   tags: Tag[]
+  favorite?: boolean
 }

@@ -53,8 +53,12 @@ function createTables() {
   `;
   db.exec(createMediaTagsTable);
 
-
-
+  // Add favorite column if it doesn't exist
+  try {
+    db.exec('ALTER TABLE media ADD COLUMN favorite INTEGER DEFAULT 0');
+  } catch {
+    // Column already exists, ignore
+  }
 }
 
 export function addMedia(filepath: string, filename: string, type: string, size: number) {
@@ -139,4 +143,45 @@ export function addTagToMedia(mediaId: number, tagId: number) {
 export function removeTagFromMedia(mediaId: number, tagId: number) {
   const stmt = db.prepare('DELETE FROM media_tags WHERE media_id = ? AND tag_id = ?');
   return stmt.run(mediaId, tagId);
+}
+
+// Favorite Operations
+
+export function toggleFavorite(mediaId: number) {
+  const stmt = db.prepare('UPDATE media SET favorite = NOT favorite WHERE id = ?');
+  stmt.run(mediaId);
+  const getStmt = db.prepare('SELECT favorite FROM media WHERE id = ?');
+  const row = getStmt.get(mediaId) as { favorite: number } | undefined;
+  return row ? Boolean(row.favorite) : false;
+}
+
+export function getFavorites() {
+  const query = `
+    SELECT 
+      m.*,
+      GROUP_CONCAT(t.id) as tag_ids,
+      GROUP_CONCAT(t.name) as tag_names
+    FROM media m
+    LEFT JOIN media_tags mt ON m.id = mt.media_id
+    LEFT JOIN tags t ON mt.tag_id = t.id
+    WHERE m.favorite = 1 AND m.type != 'directory'
+    GROUP BY m.id
+    ORDER BY m.created_at DESC
+  `;
+  const stmt = db.prepare(query);
+  const rows = stmt.all();
+  
+  return rows.map((row: any) => {
+    const tags: {id: number, name: string}[] = [];
+    if (row.tag_ids) {
+      const ids = row.tag_ids.split(',');
+      const names = row.tag_names.split(',');
+      for (let i = 0; i < ids.length; i++) {
+        tags.push({ id: Number(ids[i]), name: names[i] });
+      }
+    }
+    delete row.tag_ids;
+    delete row.tag_names;
+    return { ...row, favorite: Boolean(row.favorite), tags };
+  });
 }

@@ -2,7 +2,7 @@ import { app, shell, BrowserWindow, ipcMain, dialog } from 'electron'
 import { join } from 'path'
 import path from 'path'
 import fs from 'fs-extra'
-import { initDatabase, getAllMedia, clearAllMedia, getAllTags, createTag, addTagToMedia, removeTagFromMedia } from './database'
+import { initDatabase, getAllMedia, clearAllMedia, getAllTags, createTag, addTagToMedia, removeTagFromMedia, toggleFavorite, getFavorites } from './database'
 import { initWatcher } from './watcher'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
@@ -348,6 +348,17 @@ app.whenReady().then(async () => {
     const result = removeTagFromMedia(mediaId, tagId);
     if (mainWindow) mainWindow.webContents.send('media-updated');
     return result;
+  });
+
+  // Favorite IPC handlers
+  ipcMain.handle('toggle-favorite', (_, mediaId: number) => {
+    const result = toggleFavorite(mediaId);
+    if (mainWindow) mainWindow.webContents.send('media-updated');
+    return result;
+  });
+
+  ipcMain.handle('get-favorites', () => {
+    return getFavorites();
   });
 
 

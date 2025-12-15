@@ -29,6 +29,9 @@ declare global {
       getUserDataPath: () => Promise<string>
       openUserDataFolder: () => Promise<void>
       changeUserDataPath: (newPath: string) => Promise<boolean>
+      // Favorites
+      toggleFavorite: (mediaId: number) => Promise<boolean>
+      getFavorites: () => Promise<any[]>
     }
   }
 }

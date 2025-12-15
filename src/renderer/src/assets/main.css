@@ -212,6 +212,18 @@ body {
   align-items: center;
   justify-content: center;
   overflow: hidden;
+  position: relative;
+}
+
+/* Favorite button - show on hover */
+.media-preview .favorite-btn {
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.media-preview:hover .favorite-btn,
+.media-preview .favorite-btn.is-favorited {
+  opacity: 1;
 }
 
 .media-preview img,

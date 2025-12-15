@@ -32,7 +32,10 @@ const api = {
   // Data Path
   getUserDataPath: () => ipcRenderer.invoke('get-user-data-path'),
   openUserDataFolder: () => ipcRenderer.invoke('open-user-data-folder'),
-  changeUserDataPath: (newPath: string) => ipcRenderer.invoke('change-user-data-path', newPath)
+  changeUserDataPath: (newPath: string) => ipcRenderer.invoke('change-user-data-path', newPath),
+  // Favorites
+  toggleFavorite: (mediaId: number) => ipcRenderer.invoke('toggle-favorite', mediaId),
+  getFavorites: () => ipcRenderer.invoke('get-favorites')
 }
 
 // Use `contextBridge` APIs to expose Electron APIs to

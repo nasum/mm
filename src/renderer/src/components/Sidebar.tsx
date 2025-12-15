@@ -40,6 +40,12 @@ export function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
                         {!isCollapsed && <span className="label">Videos</span>}
                     </Link>
                 </li>
+                <li className={location.pathname === '/favorites' ? 'active' : ''}>
+                    <Link to="/favorites" title="Favorites">
+                        <span className="icon">⭐</span>
+                        {!isCollapsed && <span className="label">Favorites</span>}
+                    </Link>
+                </li>
                 <li className={location.pathname === '/tags-list' ? 'active' : ''}>
                     <Link to="/tags-list" title="Tags">
                         <span className="icon">🏷️</span>

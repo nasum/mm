@@ -8,6 +8,7 @@ import { Videos } from './pages/Videos'
 import { Settings } from './pages/Settings'
 import { TagResults } from './pages/TagResults'
 import { TagList } from './pages/TagList'
+import { Favorites } from './pages/Favorites'
 import { ImportProgress } from './components/ImportProgress'
 
 import { MediaItem } from './types'
@@ -114,6 +115,7 @@ function App() {
             <Route path="/videos" element={<Videos media={media} />} />
             <Route path="/tags" element={<TagResults media={media} />} />
             <Route path="/tags-list" element={<TagList />} />
+            <Route path="/favorites" element={<Favorites />} />
             <Route path="/settings" element={<Settings />} />
           </Routes>
         </main>
