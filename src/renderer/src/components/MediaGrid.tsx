@@ -158,6 +158,7 @@ export function MediaGrid({ media, onNavigate, onMove, onRename, onSlideshow, on
                 window.removeEventListener('popstate', handlePopState);
             };
         }
+        return undefined;
     }, [selectedItem, onSlideshowClose]);
 
     if (media.length === 0) {
